@@ -1,4 +1,4 @@
-# 🎟️ TicketAvailabilityConsumer
+# 🎟️ TicketInfoConsumer.sol
 
 A Solidity smart contract that integrates with **Chainlink Functions** to:
 
