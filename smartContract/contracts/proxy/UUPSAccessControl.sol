@@ -47,18 +47,6 @@ abstract contract UUPSAccessControl is
     }
 
     /**
-     * @notice Upgrades the contract to a new implementation and executes a function call.
-     * @dev This function can only be called by accounts with the UPGRADER role.
-     *      It must be invoked via a proxy.
-     */
-    function upgradeToAndCall(
-        address newImplementation,
-        bytes memory data
-    ) public payable override onlyProxy onlyRole(UPGRADER) {
-        super.upgradeToAndCall(newImplementation, data);
-    }
-
-    /**
      * @notice Returns the current implementation contract address.
      * @return The address of the current implementation contract.
      */
@@ -66,5 +54,7 @@ abstract contract UUPSAccessControl is
         return ERC1967Utils.getImplementation();
     }
 
-    function _authorizeUpgrade(address newImplementation) internal override {}
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyRole(UPGRADER) {}
 }
