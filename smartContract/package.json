@@ -3,5 +3,9 @@
     "@nomicfoundation/hardhat-ignition-ethers": "^0.15.11",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "hardhat": "^2.24.2"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts-upgradeable": "^5.3.0",
+    "dotenv": "^16.5.0"
   }
 }
