@@ -12,15 +12,24 @@ abstract contract UUPSAccessControl is
     UUPSUpgradeable,
     AccessControlUpgradeable
 {
-    /// @notice Only this role can upgrade contracts
-    /// @dev keccak256("UPGRADER")
+    /**
+     * @notice Only this role can upgrade contracts
+     * @dev keccak256("UPGRADER")
+     */
     bytes32 constant UPGRADER =
         0xa615a8afb6fffcb8c6809ac0997b5c9c12b8cc97651150f14c8f6203168cff4c;
 
-    /// @notice Only this role can interact with set up functions
-    /// @dev keccak256("MANAGER")
+    /**
+     * @notice Only this role can interact with set up functions
+     * @dev keccak256("MANAGER")
+     */
     bytes32 constant MANAGER =
         0xaf290d8680820aad922855f39b306097b20e28774d6c1ad35a20325630c3a02c;
+
+    /// @dev Disables initializers to prevent the implementation contract from being initialized and potentially hijacked.
+    constructor() {
+        _disableInitializers();
+    }
 
     /**
      * @notice Initializes UUPS upgradeability and role-based access control.
