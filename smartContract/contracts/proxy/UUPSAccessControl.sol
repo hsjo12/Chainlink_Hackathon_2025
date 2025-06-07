@@ -8,7 +8,10 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
  * @title UUPSAccessControl
  * @notice Combines UUPSUpgradeable and AccessControlUpgradeable into a single reusable base contract.
  */
-contract UUPSAccessControl is UUPSUpgradeable, AccessControlUpgradeable {
+abstract contract UUPSAccessControl is
+    UUPSUpgradeable,
+    AccessControlUpgradeable
+{
     /// @notice Only this role can upgrade contracts
     /// @dev keccak256("UPGRADER")
     bytes32 constant UPGRADER =
