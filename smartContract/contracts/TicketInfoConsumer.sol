@@ -6,11 +6,11 @@ import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/shared/access/Confir
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 
 /**
- * @title TicketAvailabilityConsumer
+ * @title TicketInfoConsumer
  * @notice This contract uses Chainlink Functions to fetch the remaining ticket count and verify ticket usage status from an off-chain API.
  * @dev Designed to run on the Sepolia testnet. Requires a Chainlink Functions subscription and valid DON configuration.
  */
-contract TicketAvailabilityConsumer is FunctionsClient, ConfirmedOwner {
+contract TicketInfoConsumer is FunctionsClient, ConfirmedOwner {
     using FunctionsRequest for FunctionsRequest.Request;
 
     bytes32 public s_lastRequestId;
