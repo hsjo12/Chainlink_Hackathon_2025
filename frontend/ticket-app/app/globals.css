@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+:root {
+  --background: #000000;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+html,
+body {
+  margin: 0;
+}
+* {
+  box-sizing: border-box;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Full viewport height */
+  margin: 0;
+}
+
+header {
+  background: #333;
+  color: white;
+  padding: 1rem;
+  text-align: center;
+}
+
+main {
+  flex-grow: 1; /* This makes content fill the remaining space */
+  padding: 1rem;
+}
+
+footer {
+  background: #333;
+  color: white;
+  padding: 1rem;
+  text-align: center;
+  bottom:0;
+}
