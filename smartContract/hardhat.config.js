@@ -16,18 +16,20 @@ module.exports = {
           },
         },
       },
-      networks: {
-        hardhat: {
-          forking: {
-            url: process.env.RPC,
-          },
-        },
-        sepolia: {
-          chainId: 11155111,
-          url: process.env.RPC,
-          accounts: [process.env.PK],
-        },
+    },
+  },
+
+  networks: {
+    hardhat: {
+      forking: {
+        url: process.env.RPC,
       },
+    },
+
+    sepolia: {
+      chainId: 11155111,
+      url: process.env.RPC,
+      accounts: [process.env.PK],
     },
   },
 };
