@@ -1,20 +1,11 @@
-import Image from 'next/image';
-import vercel from '../../public/vercel.svg';
+import React from "react";
 
 export function HeaderMenu() {
   return (
-    <header
-      style={{
-        display: 'flex',
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
-    >
-      <Image width={50} height={50} alt="map icon" src={vercel} />
-      <div style={{ marginLeft: 10 }} className="rr-title">
-      Chainlink Hackathon 2025
-      </div>
-    </header>
+      <section className="text-center mb-12">
+          <h1 className="text-4xl font-bold mb-2">Discover Events Around You</h1>
+          <p className="text-gray-600 text-lg">Browse and explore events happening near you</p>
+      </section>
+
   );
 }
