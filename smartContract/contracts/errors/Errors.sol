@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+error LENGTH_MISMATCH();
+error EXCEEDS_MAX_SUPPLY();
 error UNACCEPTABLE_PAYMENT();
 error INSUFFICIENT_AMOUNT();
 error TRANSACTION_FAILED();

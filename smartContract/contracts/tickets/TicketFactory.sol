@@ -5,7 +5,7 @@ import {ITicket} from "../interfaces/ITicket.sol";
 import {ITicketLaunchpad} from "../interfaces/ITicketLaunchpad.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {EventDetails} from "../types/EventDetails.sol";
-import {Tier} from "../types/Seat.sol";
+import {Tier} from "../types/TierInfo.sol";
 
 /**
  * @title TicketFactory

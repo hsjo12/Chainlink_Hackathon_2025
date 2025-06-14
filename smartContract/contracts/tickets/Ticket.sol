@@ -60,14 +60,6 @@ contract Ticket is
     }
 
     /**
-     * @notice Admin-only minting function for emergency or unsold ticket minting.
-     * @param to Recipient address.
-     * @param seats Array of seat details.
-     */
-    function adminMint(address to, Seat[] calldata seats) external onlyOwner {
-        _batchMint(to, seats);
-    }
-    /**
      * @notice Mints a single ticket NFT to `to`.
      * @dev Can only be called by the TicketLaunchpad.
      * @param to Recipient address.

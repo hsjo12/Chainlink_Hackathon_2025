@@ -6,9 +6,10 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
-import {Seat, Tier} from "../types/Seat.sol";
-import {MintSignatureParams, MintBatchSignatureParams} from "../types/mintSignature.sol";
-import {UNACCEPTABLE_PAYMENT, INSUFFICIENT_AMOUNT, TRANSACTION_FAILED, NONCE_ALREADY_USED, SIGNATURE_EXPIRED, INVALID_SIGNATURE, ZERO_ADDRESS_NOT_ALLOWED} from "../errors/Errors.sol";
+import {Seat} from "../types/Seat.sol";
+import {Tier, TierInfo} from "../types/TierInfo.sol";
+import {MintSignatureParams, MintBatchSignatureParams} from "../types/MintSignature.sol";
+import {LENGTH_MISMATCH, EXCEEDS_MAX_SUPPLY, UNACCEPTABLE_PAYMENT, INSUFFICIENT_AMOUNT, TRANSACTION_FAILED, NONCE_ALREADY_USED, SIGNATURE_EXPIRED, INVALID_SIGNATURE, ZERO_ADDRESS_NOT_ALLOWED} from "../errors/Errors.sol";
 import {ITicket} from "../interfaces/ITicket.sol";
 import {IFeeManager} from "../interfaces/IFeeManager.sol";
 import {IConfig} from "../interfaces/IConfig.sol";
@@ -34,7 +35,8 @@ contract TicketLaunchpad is
     address private _authorizedSigner;
 
     mapping(address user => uint256 nonce) public nonces; // Maps user address to their current nonce
-    mapping(Tier tier => uint256 priceInUSD) public tierPricesInUSD;
+    mapping(Tier tier => TierInfo tierInfo) public tierInfo;
+
     mapping(address paymentToken => address priceFeed)
         public paymentTokenPriceFeeds;
     Tier[] private _supportedTiers;
@@ -65,6 +67,7 @@ contract TicketLaunchpad is
         address authorizedSigner_,
         Tier[] memory tierIds,
         uint256[] calldata tierPricesUSD,
+        uint256[] calldata maxSupplies,
         address[] memory paymentTokens,
         address[] calldata priceFeeds
     ) external initializer {
@@ -81,7 +84,27 @@ contract TicketLaunchpad is
         ticket = ITicket(ticket_);
         _authorizedSigner = authorizedSigner_;
         _updateTierPrices(tierIds, tierPricesUSD);
+        _updateMaxSupply(tierIds, maxSupplies);
         _updatePaymentTokens(paymentTokens, priceFeeds);
+    }
+
+    /**
+     * @dev Updates the maximum supply for each given tier.
+     * @param tierIds Array of tier enums whose maxSupply will be updated.
+     * @param maxSupplies Parallel array of new maxSupply values for each tier.
+     */
+    function _updateMaxSupply(
+        Tier[] memory tierIds,
+        uint256[] calldata maxSupplies
+    ) private {
+        uint256 length = tierIds.length;
+        if (length != maxSupplies.length) revert LENGTH_MISMATCH();
+        for (uint256 i; i < length; ) {
+            tierInfo[tierIds[i]].maxSupply = maxSupplies[i];
+            unchecked {
+                i++;
+            }
+        }
     }
 
     /**
@@ -94,21 +117,10 @@ contract TicketLaunchpad is
         Tier[] memory tierIds,
         uint256[] calldata tierPricesUSD
     ) private {
-        uint256 length = _supportedTiers.length;
+        uint256 length = tierIds.length;
+        if (length != tierPricesUSD.length) revert LENGTH_MISMATCH();
         for (uint256 i; i < length; ) {
-            tierPricesInUSD[_supportedTiers[i]] = 0;
-            unchecked {
-                i++;
-            }
-        }
-
-        delete _supportedTiers;
-        length = tierIds.length;
-        Tier tier;
-        for (uint256 i; i < length; ) {
-            tier = Tier(tierIds[i]);
-            _supportedTiers.push(tier);
-            tierPricesInUSD[tier] = tierPricesUSD[i];
+            tierInfo[tierIds[i]].priceUSD = tierPricesUSD[i];
             unchecked {
                 i++;
             }
@@ -149,6 +161,18 @@ contract TicketLaunchpad is
     /**
      * @notice Updates the price in USD for each tier.
      * @param tierIds Array of tier enums.
+     * @param maxSupplies Corresponding new supplies.
+     */
+    function setTierMaxSupply(
+        Tier[] memory tierIds,
+        uint256[] calldata maxSupplies
+    ) external onlyOwner {
+        _updateMaxSupply(tierIds, maxSupplies);
+    }
+
+    /**
+     * @notice Updates the price in USD for each tier.
+     * @param tierIds Array of tier enums.
      * @param tierPricesUSD Corresponding new prices in USD.
      */
     function setTierPrices(
@@ -181,7 +205,7 @@ contract TicketLaunchpad is
     ) external {
         address priceFeed = paymentTokenPriceFeeds[paymentToken];
         if (priceFeed == address(0)) revert UNACCEPTABLE_PAYMENT();
-        uint256 priceUSD = tierPricesInUSD[params.seat.tier];
+        uint256 priceUSD = tierInfo[params.seat.tier].priceUSD;
         uint256 totalTicketPrice = convertUsdToPaymentToken(
             priceFeed,
             paymentToken,
@@ -218,7 +242,7 @@ contract TicketLaunchpad is
         // ETH/USD feed on sepolia
         address ethUsdPriceFeed = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
 
-        uint256 priceUSD = tierPricesInUSD[params.seat.tier];
+        uint256 priceUSD = tierInfo[params.seat.tier].priceUSD;
         uint256 totalTicketPrice = convertUsdToPaymentToken(
             ethUsdPriceFeed,
             address(0),
@@ -323,8 +347,14 @@ contract TicketLaunchpad is
      * @param params Mint parameters.
      */
     function _mintTicket(MintSignatureParams calldata params) private {
+        Tier tier = params.seat.tier;
+
+        if (tierInfo[tier].sold + 1 > tierInfo[tier].maxSupply) {
+            revert EXCEEDS_MAX_SUPPLY();
+        }
         _verify(params);
         ticket.mint(params.to, params.seat);
+        tierInfo[tier].sold++;
     }
 
     /**
@@ -334,8 +364,34 @@ contract TicketLaunchpad is
     function _mintTicketBatch(
         MintBatchSignatureParams calldata params
     ) private {
+        _trackSupply(params.seats);
         _verify(params);
         ticket.batchMint(params.to, params.seats);
+    }
+
+    /**
+     * @notice Admin-only minting function for emergency or unsold ticket minting.
+     * @param to Recipient address.
+     * @param seats Array of seat details.
+     */
+    function adminMint(address to, Seat[] calldata seats) external onlyOwner {
+        _trackSupply(seats);
+        ticket.batchMint(to, seats);
+    }
+
+    function _trackSupply(Seat[] calldata seats) private {
+        uint256 len = seats.length;
+        Tier tier;
+        for (uint256 i = 0; i < len; ) {
+            tier = seats[i].tier;
+            if (tierInfo[tier].sold + 1 > tierInfo[tier].maxSupply) {
+                revert EXCEEDS_MAX_SUPPLY();
+            }
+            tierInfo[tier].sold++;
+            unchecked {
+                i++;
+            }
+        }
     }
 
     /**
@@ -425,7 +481,7 @@ contract TicketLaunchpad is
         uint256 len = seats.length;
         uint256 priceUSD;
         for (uint256 i; i < len; ) {
-            priceUSD = tierPricesInUSD[seats[i].tier];
+            priceUSD = tierInfo[seats[i].tier].priceUSD;
             totalTicketPrice += convertUsdToPaymentToken(
                 priceFeed,
                 paymentToken,

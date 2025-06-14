@@ -1,14 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-/**
- * @dev Enum representing different ticket tiers or levels.
- */
-enum Tier {
-    VIP, // VIP tier with premium benefits
-    Standard, // Standard tier with regular access
-    None // No tier assigned or general admission
-}
+import {Tier} from "./TierInfo.sol";
 
 /**
  * @dev Struct representing a specific seat in the venue.
