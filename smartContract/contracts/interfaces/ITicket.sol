@@ -3,13 +3,14 @@ pragma solidity ^0.8.0;
 
 import {EventDetails} from "../types/EventDetails.sol";
 import {Seat} from "../types/Seat.sol";
-
+import {Tier} from "../types/TierInfo.sol";
 interface ITicket {
     function initialize(
         address owner_,
-        address signer_,
         address ticketLaunchpad_,
-        EventDetails calldata eventDetails_
+        EventDetails calldata eventDetails_,
+        Tier[] memory tierIds,
+        string[] calldata imageURIs
     ) external;
     function claimedSeatNumbers(
         string calldata seatNumber

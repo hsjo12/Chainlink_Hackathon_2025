@@ -9,7 +9,7 @@ struct MintSignatureParams {
     address to; // Recipient address of the minted ticket
     Seat seat; // Seat details to be minted
     uint256 nonce; // Unique nonce to prevent replay attacks
-    uint256 deadline; // Expiration timestamp for the signature
+    uint64 deadline; // Expiration timestamp for the signature
     bytes signature; // Off-chain signature authorizing the mint
 }
 
@@ -20,6 +20,6 @@ struct MintBatchSignatureParams {
     address to; // Recipient address of the minted tickets
     Seat[] seats; // Array of seat details to be minted
     uint256 nonce; // Unique nonce to prevent replay attacks
-    uint256 deadline; // Expiration timestamp for the signature
+    uint64 deadline; // Expiration timestamp for the signature
     bytes signature; // Off-chain signature authorizing the batch mint
 }

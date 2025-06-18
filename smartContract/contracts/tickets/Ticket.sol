@@ -5,8 +5,9 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {ERC721ABurnableUpgradeable, ERC721AUpgradeable, IERC721AUpgradeable} from "erc721a-upgradeable/contracts/extensions/ERC721ABurnableUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {EventDetails} from "../types/EventDetails.sol";
+import {Tier} from "../types/TierInfo.sol";
 import {Seat} from "../types/Seat.sol";
-import {ONLY_TICKET_LAUNCHPAD, SEAT_ALREADY_CLAIMED} from "../errors/Errors.sol";
+import {InvalidTime, LengthMismatch, OnlyTicketLaunchpad, SeatAlreadyClaimed} from "../errors/Errors.sol";
 
 /**
  * @title Ticket
@@ -19,16 +20,28 @@ contract Ticket is
 {
     /// @dev Ensures that only the TicketLaunchpad contract can call certain functions.
     modifier onlyTicketLaunchpad() {
-        if (msg.sender != ticketLaunchpad) revert ONLY_TICKET_LAUNCHPAD();
+        if (msg.sender != ticketLaunchpad) revert OnlyTicketLaunchpad();
         _;
     }
 
-    address private _authorizedSigner; // Address used to verify mint signatures.
+    /**
+     *  @dev Reverts if the current block timestamp is not within the specified time window.
+     *  @param startTime_ Inclusive start timestamp of the valid period.
+     *  @param endTime_   Exclusive end timestamp of the valid period.
+     */
+    modifier onlyValidTime(uint64 startTime_, uint64 endTime_) {
+        if (startTime_ > endTime_) revert InvalidTime();
+        _;
+    }
+
     address public ticketLaunchpad; // Address of the associated TicketLaunchpad contract.
     EventDetails private _eventDetails; // Event-specific metadata.
 
     /// @dev Mapping of tokenId to Seat information.
     mapping(uint256 tokenId => Seat seat) public seatsTokenId;
+
+    /// @dev Mapping of tier to ticket image URI.
+    mapping(Tier tier => string imageURI) public imageURIByTier;
 
     /// @dev Tracks claimed seat numbers to prevent duplication.
     mapping(string seatNumber => bool used) public claimedSeatNumbers;
@@ -41,22 +54,28 @@ contract Ticket is
     /**
      * @notice Initializes the ticket contract.
      * @param owner_ The address that will have contract ownership (typically the event organizer).
-     * @param authorizedSigner_ Address allowed to sign minting approvals.
      * @param ticketLaunchpad_ Launchpad contract address for primary sales.
      * @param eventDetails_ Metadata describing the event.
      */
     function initialize(
         address owner_,
-        address authorizedSigner_,
         address ticketLaunchpad_,
-        EventDetails calldata eventDetails_
-    ) public initializer {
+        EventDetails calldata eventDetails_,
+        Tier[] calldata tierIds,
+        string[] calldata imageURIs
+    )
+        public
+        initializer
+        initializerERC721A
+        onlyValidTime(eventDetails_.startTime, eventDetails_.endTime)
+    {
+        __ERC721A_init(eventDetails_.name, eventDetails_.symbol);
         __ERC721ABurnable_init();
         __Ownable_init(owner_);
 
-        _authorizedSigner = authorizedSigner_;
         ticketLaunchpad = ticketLaunchpad_;
         _eventDetails = eventDetails_;
+        _setImageURIsByTier(tierIds, imageURIs);
     }
 
     /**
@@ -67,7 +86,7 @@ contract Ticket is
      */
     function mint(address to, Seat calldata seat) external onlyTicketLaunchpad {
         string calldata seatNumber = seat.seatNumber;
-        if (claimedSeatNumbers[seatNumber]) revert SEAT_ALREADY_CLAIMED();
+        if (claimedSeatNumbers[seatNumber]) revert SeatAlreadyClaimed();
         claimedSeatNumbers[seatNumber] = true;
         seatsTokenId[_nextTokenId()] = seat;
 
@@ -98,7 +117,7 @@ contract Ticket is
         string calldata seatNumber;
         for (uint256 i = 0; i < len; ) {
             seatNumber = seats[i].seatNumber;
-            if (claimedSeatNumbers[seatNumber]) revert SEAT_ALREADY_CLAIMED();
+            if (claimedSeatNumbers[seatNumber]) revert SeatAlreadyClaimed();
             claimedSeatNumbers[seatNumber] = true;
             seatsTokenId[tokenId++] = seats[i];
 
@@ -116,8 +135,45 @@ contract Ticket is
      */
     function setEventDetails(
         EventDetails calldata eventDetails_
-    ) external onlyOwner {
+    )
+        external
+        onlyOwner
+        onlyValidTime(eventDetails_.startTime, eventDetails_.endTime)
+    {
         _eventDetails = eventDetails_;
+    }
+
+    /**
+     * @notice Updates the image URIs associated with each ticket tier.
+     * @dev Only callable by the contract owner. Reverts if the lengths of `tierIds` and `imageURIs` do not match.
+     * @param tierIds An array of Tier enums for which the image URIs will be updated.
+     * @param imageURIs A parallel array of new image URI strings corresponding to each `tierId`.
+     */
+    function setImageURIsByTier(
+        Tier[] calldata tierIds,
+        string[] calldata imageURIs
+    ) external onlyOwner {
+        _setImageURIsByTier(tierIds, imageURIs);
+    }
+
+    /**
+     * @dev Internal helper to perform the actual mapping update.
+     *      Expects matching array lengths; reverts with LengthMismatch otherwise.
+     * @param tierIds An array of Tier enums to iterate over.
+     * @param imageURIs A parallel array of image URI strings for each tier.
+     */
+    function _setImageURIsByTier(
+        Tier[] calldata tierIds,
+        string[] calldata imageURIs
+    ) private {
+        uint256 len = tierIds.length;
+        if (len != imageURIs.length) revert LengthMismatch();
+        for (uint256 i = 0; i < len; ) {
+            imageURIByTier[tierIds[i]] = imageURIs[i];
+            unchecked {
+                i++;
+            }
+        }
     }
 
     /**
@@ -137,7 +193,6 @@ contract Ticket is
         if (!_exists(tokenId)) _revert(URIQueryForNonexistentToken.selector);
 
         EventDetails storage eventDetails = _eventDetails;
-
         Seat storage seat = seatsTokenId[tokenId];
 
         return
@@ -146,12 +201,12 @@ contract Ticket is
                     '{"name":"',
                     eventDetails.name,
                     "#",
-                    tokenId,
+                    _toString(tokenId),
                     '", "description":"',
                     eventDetails.description,
                     '", ',
                     '"image":"',
-                    eventDetails.imageURI,
+                    imageURIByTier[seat.tier],
                     '", ',
                     '"attributes":[',
                     '{"trait_type":"Section","value":"',
@@ -161,7 +216,7 @@ contract Ticket is
                     seat.seatNumber,
                     '"},',
                     '{"trait_type":"Tier","value":"',
-                    seat.tier,
+                    _tierName(seat.tier),
                     '"},',
                     '{"trait_type":"Start Time","display_type":"date","value":',
                     _toString(eventDetails.startTime),
@@ -174,8 +229,15 @@ contract Ticket is
             );
     }
 
+    /// @dev Convert a Tier enum into its human name.
+    function _tierName(Tier tier) private pure returns (string memory) {
+        if (tier == Tier.VIP) return "VIP";
+        if (tier == Tier.STANDARD) return "STANDARD";
+        return "";
+    }
+
     /**
-     * @notice Returns the event name (used as the ERC721 collection name).
+     * @dev Returns the token collection name.
      */
     function name()
         public
@@ -188,7 +250,7 @@ contract Ticket is
     }
 
     /**
-     * @notice Returns the event symbol (used as the ERC721 collection symbol).
+     * @dev Returns the token collection symbol.
      */
     function symbol()
         public

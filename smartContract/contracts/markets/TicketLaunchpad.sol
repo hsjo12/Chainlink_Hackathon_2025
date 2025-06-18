@@ -9,7 +9,7 @@ import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/Messa
 import {Seat} from "../types/Seat.sol";
 import {Tier, TierInfo} from "../types/TierInfo.sol";
 import {MintSignatureParams, MintBatchSignatureParams} from "../types/MintSignature.sol";
-import {LENGTH_MISMATCH, EXCEEDS_MAX_SUPPLY, UNACCEPTABLE_PAYMENT, INSUFFICIENT_AMOUNT, TRANSACTION_FAILED, NONCE_ALREADY_USED, SIGNATURE_EXPIRED, INVALID_SIGNATURE, ZERO_ADDRESS_NOT_ALLOWED} from "../errors/Errors.sol";
+import {LengthMismatch, ExceedsMaxSupply, UnacceptablePayment, InsufficientAmount, TransactionFailed, InvalidNonce, SignatureExpired, InvalidSignature, ZeroAddressNotAllowed} from "../errors/Errors.sol";
 import {ITicket} from "../interfaces/ITicket.sol";
 import {IFeeManager} from "../interfaces/IFeeManager.sol";
 import {IConfig} from "../interfaces/IConfig.sol";
@@ -33,13 +33,13 @@ contract TicketLaunchpad is
     ITicket public ticket;
     IConfig public config;
     address private _authorizedSigner;
+    address public ethUsdPriceFeed;
 
     mapping(address user => uint256 nonce) public nonces; // Maps user address to their current nonce
     mapping(Tier tier => TierInfo tierInfo) public tierInfo;
 
     mapping(address paymentToken => address priceFeed)
         public paymentTokenPriceFeeds;
-    Tier[] private _supportedTiers;
     address[] private _supportedPaymentTokens;
 
     /**
@@ -56,18 +56,21 @@ contract TicketLaunchpad is
      * @param ticket_ Address of the ticket (ERC721) contract.
      * @param authorizedSigner_ Address authorized to sign mint approvals.
      * @param tierIds Array of Tier enums supported.
-     * @param tierPricesUSD Corresponding prices (in USD, 8 decimals following USDT decimal) for each tier.
+     * @param tierInfoList An array of TierInfo structs for each tier, containing:
+     *                     - priceUSD: Ticket price in USD with 8 decimals (following USDT standard).
+     *                     - maxSupply: Maximum ticket supply for the tier.
+     *                     - sold: Ignored during initialization; always reset to 0.
      * @param paymentTokens Supported payment token addresses.
      * @param priceFeeds Corresponding Chainlink price feeds for payment tokens.
      */
     function initialize(
         address owner,
+        address ethUsdPriceFeed_,
         address config_,
         address ticket_,
         address authorizedSigner_,
         Tier[] memory tierIds,
-        uint256[] calldata tierPricesUSD,
-        uint256[] calldata maxSupplies,
+        TierInfo[] calldata tierInfoList,
         address[] memory paymentTokens,
         address[] calldata priceFeeds
     ) external initializer {
@@ -78,49 +81,37 @@ contract TicketLaunchpad is
             ticket_ == address(0) ||
             config_ == address(0) ||
             authorizedSigner_ == address(0)
-        ) revert ZERO_ADDRESS_NOT_ALLOWED();
-
+        ) revert ZeroAddressNotAllowed();
+        ethUsdPriceFeed = ethUsdPriceFeed_;
         config = IConfig(config_);
         ticket = ITicket(ticket_);
         _authorizedSigner = authorizedSigner_;
-        _updateTierPrices(tierIds, tierPricesUSD);
-        _updateMaxSupply(tierIds, maxSupplies);
+        _updateTicketInfo(tierIds, tierInfoList);
         _updatePaymentTokens(paymentTokens, priceFeeds);
     }
 
     /**
-     * @dev Updates the maximum supply for each given tier.
-     * @param tierIds Array of tier enums whose maxSupply will be updated.
-     * @param maxSupplies Parallel array of new maxSupply values for each tier.
+     * @dev Updates the ticket information for each specified tier.
+     * @param tierIds Array of tier enums to update.
+     * @param tierInfoList Parallel array containing the new TierInfo data for each tier.
+     *
      */
-    function _updateMaxSupply(
+    function _updateTicketInfo(
         Tier[] memory tierIds,
-        uint256[] calldata maxSupplies
+        TierInfo[] calldata tierInfoList
     ) private {
         uint256 length = tierIds.length;
-        if (length != maxSupplies.length) revert LENGTH_MISMATCH();
-        for (uint256 i; i < length; ) {
-            tierInfo[tierIds[i]].maxSupply = maxSupplies[i];
-            unchecked {
-                i++;
-            }
-        }
-    }
+        if (length != tierInfoList.length) revert LengthMismatch();
 
-    /**
-     * @dev Updates the supported tiers and their corresponding USD prices.
-     *      Clears previous tier prices before setting new ones.
-     * @param tierIds Array of tier enums to be supported.
-     * @param tierPricesUSD Array of prices in USD corresponding to each tier.
-     */
-    function _updateTierPrices(
-        Tier[] memory tierIds,
-        uint256[] calldata tierPricesUSD
-    ) private {
-        uint256 length = tierIds.length;
-        if (length != tierPricesUSD.length) revert LENGTH_MISMATCH();
         for (uint256 i; i < length; ) {
-            tierInfo[tierIds[i]].priceUSD = tierPricesUSD[i];
+            TierInfo memory info = tierInfoList[i];
+
+            tierInfo[tierIds[i]] = TierInfo({
+                priceUSD: info.priceUSD,
+                maxSupply: info.maxSupply,
+                sold: 0
+            });
+
             unchecked {
                 i++;
             }
@@ -138,6 +129,7 @@ contract TicketLaunchpad is
         address[] calldata priceFeeds
     ) private {
         uint256 length = _supportedPaymentTokens.length;
+
         for (uint256 i; i < length; ) {
             paymentTokenPriceFeeds[_supportedPaymentTokens[i]] = address(0);
             unchecked {
@@ -147,6 +139,7 @@ contract TicketLaunchpad is
         delete _supportedPaymentTokens;
 
         length = paymentTokens.length;
+        if (length != priceFeeds.length) revert LengthMismatch();
         address token;
         for (uint256 i; i < length; ) {
             token = paymentTokens[i];
@@ -167,19 +160,33 @@ contract TicketLaunchpad is
         Tier[] memory tierIds,
         uint256[] calldata maxSupplies
     ) external onlyOwner {
-        _updateMaxSupply(tierIds, maxSupplies);
+        uint256 length = tierIds.length;
+        if (length != maxSupplies.length) revert LengthMismatch();
+        for (uint256 i; i < length; ) {
+            tierInfo[tierIds[i]].maxSupply = maxSupplies[i];
+            unchecked {
+                i++;
+            }
+        }
     }
 
     /**
      * @notice Updates the price in USD for each tier.
      * @param tierIds Array of tier enums.
-     * @param tierPricesUSD Corresponding new prices in USD.
+     * @param tierPricesUSD Corresponding new prices in USD (decimals 8).
      */
     function setTierPrices(
         Tier[] memory tierIds,
         uint256[] calldata tierPricesUSD
     ) external onlyOwner {
-        _updateTierPrices(tierIds, tierPricesUSD);
+        uint256 length = tierIds.length;
+        if (length != tierPricesUSD.length) revert LengthMismatch();
+        for (uint256 i; i < length; ) {
+            tierInfo[tierIds[i]].priceUSD = tierPricesUSD[i];
+            unchecked {
+                i++;
+            }
+        }
     }
 
     /**
@@ -204,26 +211,21 @@ contract TicketLaunchpad is
         MintSignatureParams calldata params
     ) external {
         address priceFeed = paymentTokenPriceFeeds[paymentToken];
-        if (priceFeed == address(0)) revert UNACCEPTABLE_PAYMENT();
-        uint256 priceUSD = tierInfo[params.seat.tier].priceUSD;
-        uint256 totalTicketPrice = convertUsdToPaymentToken(
-            priceFeed,
-            paymentToken,
-            priceUSD
-        );
+        if (priceFeed == address(0)) revert UnacceptablePayment();
+
+        uint256 ticketPrice = getPriceInToken(params.seat.tier, paymentToken);
 
         uint256 platformFee = IFeeManager(config.getFeeManager()).calculateFee(
-            totalTicketPrice
+            ticketPrice
         );
 
         IERC20(paymentToken).transferFrom(
             msg.sender,
             address(this),
-            totalTicketPrice
+            ticketPrice
         );
 
-        IERC20(paymentToken).transferFrom(
-            address(this),
+        IERC20(paymentToken).transfer(
             IConfig(config).getTreasury(),
             platformFee
         );
@@ -239,27 +241,19 @@ contract TicketLaunchpad is
     function payWithETH(
         MintSignatureParams calldata params
     ) external payable nonReentrant {
-        // ETH/USD feed on sepolia
-        address ethUsdPriceFeed = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
-
-        uint256 priceUSD = tierInfo[params.seat.tier].priceUSD;
-        uint256 totalTicketPrice = convertUsdToPaymentToken(
-            ethUsdPriceFeed,
-            address(0),
-            priceUSD
-        );
-        if (msg.value < totalTicketPrice) revert INSUFFICIENT_AMOUNT();
+        uint256 ticketPrice = getPriceInETH(params.seat.tier);
+        if (msg.value < ticketPrice) revert InsufficientAmount();
         //Refund
         bool ok;
-        if (msg.value > totalTicketPrice) {
-            (ok, ) = msg.sender.call{value: msg.value - totalTicketPrice}("");
-            if (!ok) revert TRANSACTION_FAILED();
+        if (msg.value > ticketPrice) {
+            (ok, ) = msg.sender.call{value: msg.value - ticketPrice}("");
+            if (!ok) revert TransactionFailed();
         }
         uint256 platformFee = IFeeManager(config.getFeeManager()).calculateFee(
-            totalTicketPrice
+            ticketPrice
         );
         (ok, ) = address(config.getTreasury()).call{value: platformFee}("");
-        if (!ok) revert TRANSACTION_FAILED();
+        if (!ok) revert TransactionFailed();
 
         _mintTicket(params);
     }
@@ -274,11 +268,11 @@ contract TicketLaunchpad is
         MintBatchSignatureParams calldata params
     ) external {
         address priceFeed = paymentTokenPriceFeeds[paymentToken];
-        if (priceFeed == address(0)) revert UNACCEPTABLE_PAYMENT();
+        if (priceFeed == address(0)) revert UnacceptablePayment();
 
         Seat[] calldata seats = params.seats;
 
-        uint256 totalTicketPrice = _calculateTotalTicketPrice(
+        uint256 totalTicketPrice = _calculateTotalTicketPriceToken(
             priceFeed,
             paymentToken,
             seats
@@ -295,11 +289,7 @@ contract TicketLaunchpad is
         );
 
         address currentTreasury = IConfig(config).getTreasury();
-        IERC20(paymentToken).transferFrom(
-            address(this),
-            currentTreasury,
-            platformFee
-        );
+        IERC20(paymentToken).transfer(currentTreasury, platformFee);
 
         _mintTicketBatch(params);
     }
@@ -312,24 +302,20 @@ contract TicketLaunchpad is
     function payBatchWithETH(
         MintBatchSignatureParams calldata params
     ) external payable nonReentrant {
-        // ETH/USD on sepolia
-        address ethUsdPriceFeed = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
-
         Seat[] calldata seats = params.seats;
 
-        uint256 totalTicketPrice = _calculateTotalTicketPrice(
+        uint256 totalTicketPrice = _calculateTotalTicketPriceETH(
             ethUsdPriceFeed,
-            address(0),
             seats
         );
 
-        if (msg.value < totalTicketPrice) revert INSUFFICIENT_AMOUNT();
+        if (msg.value < totalTicketPrice) revert InsufficientAmount();
 
         //Refund
         bool ok;
         if (msg.value > totalTicketPrice) {
             (ok, ) = msg.sender.call{value: msg.value - totalTicketPrice}("");
-            if (!ok) revert TRANSACTION_FAILED();
+            if (!ok) revert TransactionFailed();
         }
 
         uint256 platformFee = IFeeManager(config.getFeeManager()).calculateFee(
@@ -337,7 +323,7 @@ contract TicketLaunchpad is
         );
 
         (ok, ) = address(config.getTreasury()).call{value: platformFee}("");
-        if (!ok) revert TRANSACTION_FAILED();
+        if (!ok) revert TransactionFailed();
 
         _mintTicketBatch(params);
     }
@@ -350,7 +336,7 @@ contract TicketLaunchpad is
         Tier tier = params.seat.tier;
 
         if (tierInfo[tier].sold + 1 > tierInfo[tier].maxSupply) {
-            revert EXCEEDS_MAX_SUPPLY();
+            revert ExceedsMaxSupply();
         }
         _verify(params);
         ticket.mint(params.to, params.seat);
@@ -385,7 +371,7 @@ contract TicketLaunchpad is
         for (uint256 i = 0; i < len; ) {
             tier = seats[i].tier;
             if (tierInfo[tier].sold + 1 > tierInfo[tier].maxSupply) {
-                revert EXCEEDS_MAX_SUPPLY();
+                revert ExceedsMaxSupply();
             }
             tierInfo[tier].sold++;
             unchecked {
@@ -405,14 +391,14 @@ contract TicketLaunchpad is
     function _verify(
         address to,
         uint256 nonce,
-        uint256 deadline,
+        uint64 deadline,
         bytes32 dataHash,
         bytes calldata sig
     ) private {
-        if (nonces[to] != nonce) revert NONCE_ALREADY_USED();
-        if (block.timestamp > deadline) revert SIGNATURE_EXPIRED();
+        if (nonces[to] != nonce) revert InvalidNonce();
+        if (block.timestamp > deadline) revert SignatureExpired();
         if (_authorizedSigner != dataHash.toEthSignedMessageHash().recover(sig))
-            revert INVALID_SIGNATURE();
+            revert InvalidSignature();
         unchecked {
             nonces[to] = nonce + 1;
         }
@@ -425,8 +411,9 @@ contract TicketLaunchpad is
     function _verify(MintSignatureParams calldata params) private {
         address to = params.to;
         uint256 nonce = params.nonce;
-        uint256 deadline = params.deadline;
+        uint64 deadline = params.deadline;
         Seat calldata seat = params.seat;
+
         bytes32 hash = keccak256(
             abi.encode(
                 to,
@@ -437,6 +424,7 @@ contract TicketLaunchpad is
                 deadline
             )
         );
+
         _verify(to, nonce, deadline, hash, params.signature);
     }
 
@@ -447,7 +435,7 @@ contract TicketLaunchpad is
     function _verify(MintBatchSignatureParams calldata params) private {
         address to = params.to;
         uint256 nonce = params.nonce;
-        uint256 deadline = params.deadline;
+        uint64 deadline = params.deadline;
         Seat[] calldata seats = params.seats;
         bytes32 hash = keccak256(abi.encode(to, seats, nonce, deadline));
         _verify(to, nonce, deadline, hash, params.signature);
@@ -465,28 +453,24 @@ contract TicketLaunchpad is
         (, int256 answer, , , ) = aggregator.latestRoundData();
         priceInUSD = uint256(answer);
     }
-
     /**
-     * @dev Calculates the total price in payment token for multiple seats.
-     * @param priceFeed Chainlink price feed address for payment token.
-     * @param paymentToken ERC20 token address (or zero for ETH).
-     * @param seats Array of seats to calculate prices for.
-     * @return totalTicketPrice Total price in smallest units of payment token.
+     * @notice Calculates the total price for multiple tickets when paying with ETH.
+     * @dev Uses the ETH/USD Chainlink price feed to convert USD-denominated ticket prices into wei.
+     * @param priceFeed Chainlink price feed address for ETH/USD.
+     * @param seats Array of Seat structs representing the tickets to be purchased.
+     * @return totalTicketPrice Total ticket price in wei.
      */
-    function _calculateTotalTicketPrice(
+    function _calculateTotalTicketPriceETH(
         address priceFeed,
-        address paymentToken,
         Seat[] calldata seats
     ) private view returns (uint256 totalTicketPrice) {
         uint256 len = seats.length;
-        uint256 priceUSD;
+        uint256 priceInUSD = _getPriceFeed(priceFeed);
+
         for (uint256 i; i < len; ) {
-            priceUSD = tierInfo[seats[i].tier].priceUSD;
-            totalTicketPrice += convertUsdToPaymentToken(
-                priceFeed,
-                paymentToken,
-                priceUSD
-            );
+            totalTicketPrice +=
+                (tierInfo[seats[i].tier].priceUSD * 1e18) /
+                priceInUSD;
             unchecked {
                 i++;
             }
@@ -494,21 +478,79 @@ contract TicketLaunchpad is
     }
 
     /**
-     * @notice Converts a USD price amount into payment token amount using Chainlink price feed.
-     * @param priceFeed Chainlink price feed address.
-     * @param paymentToken ERC20 token address (address(0) if ETH).
-     * @param ticketPriceInUSD Price in USD with 8 decimals.
-     * @return Amount in payment token smallest units.
+     * @notice Calculates the total price for multiple tickets when paying with an ERC20 token.
+     * @dev Uses the provided ERC20 token's Chainlink price feed to convert USD-denominated ticket prices into token amounts.
+     * @param priceFeed Chainlink price feed address for the ERC20 token/USD pair.
+     * @param paymentToken ERC20 token address used for payment.
+     * @param seats Array of Seat structs representing the tickets to be purchased.
+     * @return totalTicketPrice Total ticket price in the smallest units of the ERC20 token.
      */
-    function convertUsdToPaymentToken(
+    function _calculateTotalTicketPriceToken(
         address priceFeed,
         address paymentToken,
-        uint256 ticketPriceInUSD
-    ) public view returns (uint256) {
-        uint8 tokenDecimals = paymentToken == address(0)
-            ? 18
-            : IERC20Metadata(paymentToken).decimals();
+        Seat[] calldata seats
+    ) private view returns (uint256 totalTicketPrice) {
+        uint256 len = seats.length;
+        uint8 tokenDecimals = IERC20Metadata(paymentToken).decimals();
         uint256 priceInUSD = _getPriceFeed(priceFeed);
-        return (ticketPriceInUSD * (10 ** tokenDecimals)) / priceInUSD;
+
+        for (uint256 i; i < len; ) {
+            totalTicketPrice +=
+                (tierInfo[seats[i].tier].priceUSD * (10 ** tokenDecimals)) /
+                priceInUSD;
+            unchecked {
+                i++;
+            }
+        }
+    }
+
+    /**
+     * @notice Returns the ticket price for a given tier denominated in ETH (wei).
+     * @param tier The ticket Tier enum for which to fetch the price.
+     * @return priceInETH The ticket price in wei, calculated from the USD price using the ETH/USD Chainlink feed.
+     * @dev Uses the stored `priceUSD` (8 decimals) for the tier and divides by the latest ETH/USD price (8 decimals),
+     *      scaling by 10^18 to convert to wei.
+     */
+    function getPriceInETH(Tier tier) public view returns (uint256) {
+        uint256 priceInUSD = _getPriceFeed(ethUsdPriceFeed);
+        return (tierInfo[tier].priceUSD * (10 ** 18)) / priceInUSD;
+    }
+
+    /**
+     * @notice Returns the ticket price for a given tier denominated in an ERC20 payment token.
+     * @param tier The ticket Tier enum for which to fetch the price.
+     * @param paymentToken The ERC20 token address used for payment.
+     * @return priceInToken The ticket price in the smallest unit of the payment token.
+     * @dev Fetches the token’s decimal count, retrieves the latest USD price for the token via its Chainlink feed,
+     *      then scales the tier’s USD price (8 decimals) by 10^tokenDecimals and divides by the feed price (8 decimals).
+     */
+    function getPriceInToken(
+        Tier tier,
+        address paymentToken
+    ) public view returns (uint256) {
+        uint8 tokenDecimals = IERC20Metadata(paymentToken).decimals();
+        address tokenPriceFeed = paymentTokenPriceFeeds[paymentToken];
+        uint256 priceInUSD = _getPriceFeed(tokenPriceFeed);
+        return (tierInfo[tier].priceUSD * (10 ** tokenDecimals)) / priceInUSD;
+    }
+
+    /**
+     * @notice Withdraw all ETH balance from the contract to a specified address.
+     * @param to Recipient address for ETH withdrawal.
+     */
+    function withdrawETH(address to) external onlyOwner {
+        uint256 balance = address(this).balance;
+        (bool ok, ) = to.call{value: balance}("");
+        if (!ok) revert TransactionFailed();
+    }
+
+    /**
+     * @notice Withdraw all ERC20 tokens of a specified token contract held by this contract.
+     * @param to Recipient address for token withdrawal.
+     * @param token ERC20 token contract address.
+     */
+    function withdrawToken(address to, address token) external onlyOwner {
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        IERC20(token).transfer(to, balance);
     }
 }

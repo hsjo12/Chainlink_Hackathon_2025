@@ -10,7 +10,7 @@ import {UUPSAccessControl} from "../proxy/UUPSAccessControl.sol";
  */
 contract FeeManager is UUPSAccessControl {
     // keccak256(abi.encode(uint256(keccak256("FEE_MANAGER_LOCATION")) - 1));
-    bytes32 private constant FEE_MANAGER_LOCATION =
+    bytes32 constant FEE_MANAGER_LOCATION =
         0x0883a0a917fea80562573e6afe782216fbb17a54ede6c467a2e8aaeadf791bda;
     uint256 constant BPS = 10_000;
 
@@ -37,6 +37,7 @@ contract FeeManager is UUPSAccessControl {
      * @param feeRate The fee rate in basis points (BPS). (e.g., 100 = 1%)
      */
     function initialize(uint256 feeRate) external initializer {
+        __UUpsSet_init();
         FeeManagerStorage storage $ = _getFeeManagerLocation();
         $.feeRate = feeRate;
     }

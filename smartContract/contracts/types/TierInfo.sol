@@ -6,8 +6,7 @@ pragma solidity ^0.8.0;
  */
 enum Tier {
     VIP, // VIP tier with premium benefits
-    Standard, // Standard tier with regular access
-    None // No tier assigned or general admission
+    STANDARD // Standard tier with regular access
 }
 /**
  * @dev Struct containing information for each ticket tier.

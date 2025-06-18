@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.30;
 import {UUPSAccessControl} from "../proxy/UUPSAccessControl.sol";
+import {IOrganizerRegistry} from "../interfaces/IOrganizerRegistry.sol";
+import {IConfig} from "../interfaces/IConfig.sol";
 import {ITicket} from "../interfaces/ITicket.sol";
 import {ITicketLaunchpad} from "../interfaces/ITicketLaunchpad.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {EventDetails} from "../types/EventDetails.sol";
-import {Tier} from "../types/TierInfo.sol";
-
+import {Tier, TierInfo} from "../types/TierInfo.sol";
+import {InvalidOrganizer} from "../errors/Errors.sol";
 /**
  * @title TicketFactory
  * @notice Factory contract for creating event Ticket NFTs along with their associated launchpad contracts.
@@ -71,6 +73,7 @@ contract TicketFactory is UUPSAccessControl {
         address config,
         address authorizedSigner
     ) external initializer {
+        __UUpsSet_init();
         TicketFactoryStorage storage $ = _getTicketFactoryLocation();
         $.ticketImplementation = ticketImplementation;
         $.ticketLaunchpadImplementation = ticketLaunchpadImplementation;
@@ -82,20 +85,31 @@ contract TicketFactory is UUPSAccessControl {
      * @notice Create an NFT ticket and its associated launchpad using minimal proxies.
      * @param eventDetails The event details metadata for the ticket NFT.
      * @param tierIds List of ticket tier IDs (e.g., VIP, Standard).
-     * @param tierPricesUSD Prices per tier (in USD, 8 decimals following USDT decimal).
+     * @param tierInfoList An array of TierInfo structs for each tier, containing:
+     *                     - priceUSD: Ticket price in USD with 8 decimals (following USDT standard).
+     *                     - maxSupply: Maximum ticket supply for the tier.
+     *                     - sold: Ignored during initialization; always reset to 0.
      * @param paymentTokens Allowed ERC20 tokens for ticket purchase.
      * @param priceFeeds Chainlink price feed addresses corresponding to each token.
      * @return ticket Address of the created Ticket contract.
      * @return ticketLaunchpad Address of the created TicketLaunchpad contract.
      */
     function createTicketPair(
+        address ethUSDPriceFeed,
         EventDetails calldata eventDetails,
         Tier[] memory tierIds,
-        uint256[] calldata tierPricesUSD,
+        string[] calldata imageURIs,
+        TierInfo[] calldata tierInfoList,
         address[] memory paymentTokens,
         address[] calldata priceFeeds
     ) external returns (address ticket, address ticketLaunchpad) {
         TicketFactoryStorage storage $ = _getTicketFactoryLocation();
+
+        // Check if the event organizer is qualified to create a ticket pair
+        address organizerRegistry = IConfig($.config).getOrganizerRegistry();
+        if (!IOrganizerRegistry(organizerRegistry).checkOrganizer(msg.sender)) {
+            revert InvalidOrganizer();
+        }
 
         // Clones the Ticket and TicketLaunchpad implementation contracts to create new minimal proxies.
         ticket = Clones.clone($.ticketImplementation);
@@ -106,22 +120,110 @@ contract TicketFactory is UUPSAccessControl {
 
         ITicket(ticket).initialize(
             msg.sender,
-            $.authorizedSigner,
             ticketLaunchpad,
-            eventDetails
+            eventDetails,
+            tierIds,
+            imageURIs
         );
 
         ITicketLaunchpad(ticketLaunchpad).initialize(
             msg.sender,
+            ethUSDPriceFeed,
             $.config,
             ticket,
             $.authorizedSigner,
             tierIds,
-            tierPricesUSD,
+            tierInfoList,
             paymentTokens,
             priceFeeds
         );
 
         emit Created(msg.sender, ticket, ticketLaunchpad);
+    }
+
+    /**
+     * @notice Returns the ticket implementation address.
+     */
+    function getTicketImplementation() external view returns (address) {
+        return _getTicketFactoryLocation().ticketImplementation;
+    }
+
+    /**
+     * @notice Sets the ticket implementation address.
+     * @dev Only accounts with MANAGER role can call.
+     */
+    function setTicketImplementation(address impl) external onlyRole(MANAGER) {
+        _getTicketFactoryLocation().ticketImplementation = impl;
+    }
+
+    /**
+     * @notice Returns the ticket launchpad implementation address.
+     */
+    function getTicketLaunchpadImplementation()
+        external
+        view
+        returns (address)
+    {
+        return _getTicketFactoryLocation().ticketLaunchpadImplementation;
+    }
+
+    /**
+     * @notice Sets the ticket launchpad implementation address.
+     * @dev Only accounts with MANAGER role can call.
+     */
+    function setTicketLaunchpadImplementation(
+        address impl
+    ) external onlyRole(MANAGER) {
+        _getTicketFactoryLocation().ticketLaunchpadImplementation = impl;
+    }
+
+    /**
+     * @notice Returns the config contract address.
+     */
+    function getConfigAddress() external view returns (address) {
+        return _getTicketFactoryLocation().config;
+    }
+
+    /**
+     * @notice Sets the config contract address.
+     * @dev Only accounts with MANAGER role can call.
+     */
+    function setConfigAddress(address cfg) external onlyRole(MANAGER) {
+        _getTicketFactoryLocation().config = cfg;
+    }
+
+    /**
+     * @notice Returns the authorized signer address.
+     */
+    function getAuthorizedSigner() external view returns (address) {
+        return _getTicketFactoryLocation().authorizedSigner;
+    }
+
+    /**
+     * @notice Sets the authorized signer address.
+     * @dev Only accounts with MANAGER role can call.
+     */
+    function setAuthorizedSigner(address signer) external onlyRole(MANAGER) {
+        _getTicketFactoryLocation().authorizedSigner = signer;
+    }
+
+    /**
+     * @notice Returns the launchpad address for a given ticket.
+     * @param ticketAddr The ticket contract address.
+     */
+    function getLaunchpadByTicket(
+        address ticketAddr
+    ) external view returns (address) {
+        return _getTicketFactoryLocation().launchpadByTicket[ticketAddr];
+    }
+
+    /**
+     * @notice Returns the list of tickets created by a user.
+     * @param user The user address.
+     */
+    function getTicketListByUser(
+        address user
+    ) external view returns (address[] memory) {
+        return _getTicketFactoryLocation().ticketListByUser[user];
     }
 }

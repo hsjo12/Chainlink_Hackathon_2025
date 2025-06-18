@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.30;
-import {TRANSACTION_FAILED} from "../errors/Errors.sol";
+import {TransactionFailed} from "../errors/Errors.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {UUPSAccessControl} from "../proxy/UUPSAccessControl.sol";
 /**
@@ -13,7 +13,7 @@ contract Treasury is UUPSAccessControl {
      * @notice Initialize the contract and access control.
      * @dev Calls internal initializer from UUPSAccessControl.
      */
-    function initialize() external {
+    function initialize() external initializer {
         __UUpsSet_init();
     }
 
@@ -21,12 +21,12 @@ contract Treasury is UUPSAccessControl {
      * @notice Withdraw all ETH balance from the contract to a specified address.
      * @param to Recipient address for ETH withdrawal.
      * @dev Only callable by accounts with MANAGER role.
-     * Reverts with TRANSACTION_FAILED error if the transfer fails.
+     * Reverts with TransactionFailed error if the transfer fails.
      */
     function withdrawETH(address to) external onlyRole(MANAGER) {
         uint256 balance = address(this).balance;
         (bool ok, ) = to.call{value: balance}("");
-        if (!ok) revert TRANSACTION_FAILED();
+        if (!ok) revert TransactionFailed();
     }
 
     /**

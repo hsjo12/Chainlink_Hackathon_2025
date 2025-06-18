@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-error LENGTH_MISMATCH();
-error EXCEEDS_MAX_SUPPLY();
-error UNACCEPTABLE_PAYMENT();
-error INSUFFICIENT_AMOUNT();
-error TRANSACTION_FAILED();
-error NONCE_ALREADY_USED();
-error SIGNATURE_EXPIRED();
-error INVALID_SIGNATURE();
-error ZERO_ADDRESS_NOT_ALLOWED();
-error ONLY_TICKET_LAUNCHPAD();
-error SEAT_ALREADY_CLAIMED();
+error InvalidOrganizer();
+error InvalidTime();
+error LengthMismatch();
+error ExceedsMaxSupply();
+error UnacceptablePayment();
+error InsufficientAmount();
+error TransactionFailed();
+error InvalidNonce();
+error SignatureExpired();
+error InvalidSignature();
+error ZeroAddressNotAllowed();
+error OnlyTicketLaunchpad();
+error SeatAlreadyClaimed();

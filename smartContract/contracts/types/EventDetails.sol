@@ -7,7 +7,7 @@ pragma solidity ^0.8.0;
 struct EventDetails {
     string name;
     string symbol;
-    string imageURI;
+    string coverImageURI;
     string description;
     uint64 startTime;
     uint64 endTime;

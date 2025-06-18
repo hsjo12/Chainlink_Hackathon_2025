@@ -19,6 +19,7 @@ contract Config is UUPSAccessControl {
     struct ConfigStorage {
         address feeManager;
         address treasury;
+        address organizerRegistry;
     }
 
     function _getConfigLocation()
@@ -38,11 +39,14 @@ contract Config is UUPSAccessControl {
      */
     function initialize(
         address feeManager,
-        address treasury
+        address treasury,
+        address organizerRegistry
     ) external initializer {
+        __UUpsSet_init();
         ConfigStorage storage $ = _getConfigLocation();
         $.feeManager = feeManager;
         $.treasury = treasury;
+        $.organizerRegistry = organizerRegistry;
     }
 
     /**
@@ -64,6 +68,17 @@ contract Config is UUPSAccessControl {
     }
 
     /**
+     * @notice Sets the OrganizerRegistry contract address.
+     * @param organizerRegistry The new OrganizerRegistry contract address.
+     */
+    function setOrganizerRegistry(
+        address organizerRegistry
+    ) external onlyRole(MANAGER) {
+        ConfigStorage storage $ = _getConfigLocation();
+        $.organizerRegistry = organizerRegistry;
+    }
+
+    /**
      * @notice Returns the current FeeManager contract address.
      * @return The address of the FeeManager contract.
      */
@@ -79,5 +94,14 @@ contract Config is UUPSAccessControl {
     function getTreasury() external view returns (address) {
         ConfigStorage storage $ = _getConfigLocation();
         return $.treasury;
+    }
+
+    /**
+     * @notice Returns the current OrganizerRegistry contract address.
+     * @return The address of the OrganizerRegistry contract.
+     */
+    function getOrganizerRegistry() external view returns (address) {
+        ConfigStorage storage $ = _getConfigLocation();
+        return $.organizerRegistry;
     }
 }
