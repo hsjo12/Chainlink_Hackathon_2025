@@ -79,20 +79,23 @@ contract Ticket is
     }
 
     /**
-     * @notice Mints a single ticket NFT to `to`.
-     * @dev Can only be called by the TicketLaunchpad.
-     * @param to Recipient address.
-     * @param seat Seat details for this ticket.
+     * @notice Mints a ticket NFT with the specified seat information to the recipient address.
+     * @dev Only callable by the TicketLaunchpad contract.
+     *      Prevents duplicate minting for non-standing seats by checking seat number.
+     * @param to The address receiving the minted ticket.
+     * @param seat The Seat struct containing section, seat number, and tier information.
      */
     function mint(address to, Seat calldata seat) external onlyTicketLaunchpad {
-        string calldata seatNumber = seat.seatNumber;
-        if (claimedSeatNumbers[seatNumber]) revert SeatAlreadyClaimed();
-        claimedSeatNumbers[seatNumber] = true;
-        seatsTokenId[_nextTokenId()] = seat;
+        if (seat.tier != Tier.STANDING) {
+            if (claimedSeatNumbers[seat.seatNumber])
+                revert SeatAlreadyClaimed();
+            claimedSeatNumbers[seat.seatNumber] = true;
+        }
 
+        uint256 tokenId = _nextTokenId();
+        seatsTokenId[tokenId] = seat;
         _safeMint(to, 1);
     }
-
     /**
      * @notice Mints multiple tickets in a batch to `to`.
      * @dev Can only be called by the TicketLaunchpad.
@@ -107,27 +110,33 @@ contract Ticket is
     }
 
     /**
-     * @dev A private function to handle batch minting logic.
-     * @param to Recipient address.
-     * @param seats Array of seat details.
+     * @dev Mints multiple ticket NFTs with specified seat information to the recipient address.
+     *      Only non-standing seats are checked for duplication to prevent double-minting.
+     * @param to The address receiving the minted tickets.
+     * @param seats Array of Seat structs, each containing section, seat number, and tier information.
      */
     function _batchMint(address to, Seat[] calldata seats) private {
         uint256 len = seats.length;
         uint256 tokenId = _nextTokenId();
-        string calldata seatNumber;
+
         for (uint256 i = 0; i < len; ) {
-            seatNumber = seats[i].seatNumber;
-            if (claimedSeatNumbers[seatNumber]) revert SeatAlreadyClaimed();
-            claimedSeatNumbers[seatNumber] = true;
-            seatsTokenId[tokenId++] = seats[i];
+            Seat calldata seat = seats[i];
+
+            if (seat.tier != Tier.STANDING) {
+                if (claimedSeatNumbers[seat.seatNumber])
+                    revert SeatAlreadyClaimed();
+                claimedSeatNumbers[seat.seatNumber] = true;
+            }
+
+            seatsTokenId[tokenId++] = seat;
 
             unchecked {
                 i++;
             }
         }
+
         _safeMint(to, len);
     }
-
     /**
      * @notice Updates the event details (metadata).
      * @dev Only the owner (supposedly the event organizer) can update event details.

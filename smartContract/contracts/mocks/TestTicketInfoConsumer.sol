@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.30;
 
 import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
 
@@ -26,7 +26,7 @@ contract TestTicketInfoConsumer is ConfirmedOwner {
         bytes rawResponse,
         bytes error
     );
-    
+
     event TicketVerified(
         bytes32 indexed requestId,
         string ticketId,
@@ -38,23 +38,27 @@ contract TestTicketInfoConsumer is ConfirmedOwner {
     constructor() ConfirmedOwner(msg.sender) {}
 
     function requestRemainingTickets(
-        uint64, /* subscriptionId */
+        uint64 /* subscriptionId */,
         string[] calldata /* args */
     ) external onlyOwner returns (bytes32 requestId) {
-        s_lastRequestId = keccak256(abi.encodePacked(block.timestamp, "availability"));
+        s_lastRequestId = keccak256(
+            abi.encodePacked(block.timestamp, "availability")
+        );
         return s_lastRequestId;
     }
-    
+
     function verifyTicketUsage(
-        uint64, /* subscriptionId */
+        uint64 /* subscriptionId */,
         string calldata ticketId
     ) external onlyOwner returns (bytes32 requestId) {
         if (bytes(ticketId).length == 0) {
             revert InvalidTicketID(ticketId);
         }
-        
+
         s_lastCheckedTicketId = ticketId;
-        s_lastRequestId = keccak256(abi.encodePacked(block.timestamp, "verification", ticketId));
+        s_lastRequestId = keccak256(
+            abi.encodePacked(block.timestamp, "verification", ticketId)
+        );
         return s_lastRequestId;
     }
 
@@ -75,14 +79,26 @@ contract TestTicketInfoConsumer is ConfirmedOwner {
             if (err.length == 0 && response.length >= 32) {
                 uint256 isUsedInt = abi.decode(response, (uint256));
                 bool isUsed = isUsedInt > 0;
-                
+
                 ticketUsageStatus[s_lastCheckedTicketId] = isUsed;
                 s_lastTicketUsed = isUsed;
-                
-                emit TicketVerified(requestId, s_lastCheckedTicketId, isUsed, response, err);
+
+                emit TicketVerified(
+                    requestId,
+                    s_lastCheckedTicketId,
+                    isUsed,
+                    response,
+                    err
+                );
                 s_lastCheckedTicketId = "";
             } else {
-                emit TicketVerified(requestId, s_lastCheckedTicketId, false, response, err);
+                emit TicketVerified(
+                    requestId,
+                    s_lastCheckedTicketId,
+                    false,
+                    response,
+                    err
+                );
                 s_lastCheckedTicketId = "";
             }
         } else {
@@ -90,12 +106,14 @@ contract TestTicketInfoConsumer is ConfirmedOwner {
             if (err.length == 0 && response.length >= 32) {
                 remainingTickets = abi.decode(response, (uint256));
             }
-            
+
             emit Response(requestId, remainingTickets, response, err);
         }
     }
-    
-    function isTicketUsed(string calldata ticketId) external view returns (bool) {
+
+    function isTicketUsed(
+        string calldata ticketId
+    ) external view returns (bool) {
         return ticketUsageStatus[ticketId];
     }
 }

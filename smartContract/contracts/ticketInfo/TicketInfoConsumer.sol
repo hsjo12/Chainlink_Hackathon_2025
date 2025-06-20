@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.30;
 
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
@@ -19,19 +19,19 @@ contract TicketInfoConsumer is FunctionsClient, ConfirmedOwner {
 
     /// @notice Latest number of remaining tickets fetched from the API
     uint256 public remainingTickets;
-    
+
     /// @notice Mapping to store ticket usage status (ticketId => isUsed)
     mapping(string => bool) public ticketUsageStatus;
-    
+
     /// @notice Last ticket ID that was checked
     string public s_lastCheckedTicketId;
-    
+
     /// @notice Last ticket usage status
     bool public s_lastTicketUsed;
 
     /// @dev Custom error for mismatched request fulfillment
     error UnexpectedRequestID(bytes32 requestId);
-    
+
     /// @dev Custom error for invalid ticket ID
     error InvalidTicketID(string ticketId);
 
@@ -42,7 +42,7 @@ contract TicketInfoConsumer is FunctionsClient, ConfirmedOwner {
         bytes rawResponse,
         bytes error
     );
-    
+
     /// @notice Emitted when a ticket usage status is verified
     event TicketVerified(
         bytes32 indexed requestId,
@@ -66,31 +66,31 @@ contract TicketInfoConsumer is FunctionsClient, ConfirmedOwner {
      * @notice Inline JavaScript source code for Chainlink Functions to check availability
      * @dev Fetches all tickets, finds the one with matching ID, returns its `remaining` value as uint256
      */
-    string availabilitySource = 
-    "const eventId = args[0];"
-    "const url = 'https://6841cf3ad48516d1d35cf71c.mockapi.io/tickets/' + eventId;"
-    "const response = await Functions.makeHttpRequest({ url });"
-    "if (response.error) { throw Error('Request failed'); }"
-    "const data = response.data;"
-    "if (!data || typeof data !== 'object') throw Error(`Invalid response`);"
-    "const rawRemaining = data.remaining;"
-    "const available = Number(rawRemaining);"
-    "if (!Number.isFinite(available)) throw Error(`Invalid ticket count: ${rawRemaining}`);"
-    "return Functions.encodeUint256(available);";
+    string availabilitySource =
+        "const eventId = args[0];"
+        "const url = 'https://6841cf3ad48516d1d35cf71c.mockapi.io/tickets/' + eventId;"
+        "const response = await Functions.makeHttpRequest({ url });"
+        "if (response.error) { throw Error('Request failed'); }"
+        "const data = response.data;"
+        "if (!data || typeof data !== 'object') throw Error(`Invalid response`);"
+        "const rawRemaining = data.remaining;"
+        "const available = Number(rawRemaining);"
+        "if (!Number.isFinite(available)) throw Error(`Invalid ticket count: ${rawRemaining}`);"
+        "return Functions.encodeUint256(available);";
 
     /**
      * @notice Inline JavaScript source code for Chainlink Functions to verify ticket usage
      * @dev Fetches ticket data and checks if the specified ticket has been used
      */
     string ticketVerificationSource =
-    "const ticketId = args[0];"
-    "const url = 'https://6841cf3ad48516d1d35cf71c.mockapi.io/verifytickets/' + ticketId;"
-    "const response = await Functions.makeHttpRequest({ url });"
-    "if (response.error) { throw Error('Request failed'); }"
-    "const data = response.data;"
-    "if (!data || typeof data !== 'object') throw Error(`Ticket ID ${ticketId} not found or invalid`);"
-    "const isUsed = data.used === true;"
-    "return Functions.encodeUint256(isUsed ? 1 : 0);";
+        "const ticketId = args[0];"
+        "const url = 'https://6841cf3ad48516d1d35cf71c.mockapi.io/verifytickets/' + ticketId;"
+        "const response = await Functions.makeHttpRequest({ url });"
+        "if (response.error) { throw Error('Request failed'); }"
+        "const data = response.data;"
+        "if (!data || typeof data !== 'object') throw Error(`Ticket ID ${ticketId} not found or invalid`);"
+        "const isUsed = data.used === true;"
+        "return Functions.encodeUint256(isUsed ? 1 : 0);";
 
     /**
      * @notice Constructor sets up Chainlink Functions client and ownership
@@ -120,7 +120,7 @@ contract TicketInfoConsumer is FunctionsClient, ConfirmedOwner {
 
         return s_lastRequestId;
     }
-    
+
     /**
      * @notice Sends a Chainlink Functions request to verify if a ticket has been used
      * @param subscriptionId Your Chainlink Functions subscription ID
@@ -134,14 +134,14 @@ contract TicketInfoConsumer is FunctionsClient, ConfirmedOwner {
         if (bytes(ticketId).length == 0) {
             revert InvalidTicketID(ticketId);
         }
-        
+
         FunctionsRequest.Request memory req;
         req.initializeRequestForInlineJavaScript(ticketVerificationSource);
-        
+
         string[] memory args = new string[](1);
         args[0] = ticketId;
         req.setArgs(args);
-        
+
         s_lastCheckedTicketId = ticketId;
         s_lastRequestId = _sendRequest(
             req.encodeCBOR(),
@@ -177,17 +177,29 @@ contract TicketInfoConsumer is FunctionsClient, ConfirmedOwner {
             if (err.length == 0 && response.length >= 32) {
                 uint256 isUsedInt = abi.decode(response, (uint256));
                 bool isUsed = isUsedInt > 0;
-                
+
                 // Update the ticket usage status
                 ticketUsageStatus[s_lastCheckedTicketId] = isUsed;
                 s_lastTicketUsed = isUsed;
-                
-                emit TicketVerified(requestId, s_lastCheckedTicketId, isUsed, response, err);
-                
+
+                emit TicketVerified(
+                    requestId,
+                    s_lastCheckedTicketId,
+                    isUsed,
+                    response,
+                    err
+                );
+
                 // Reset the last checked ticket ID
                 s_lastCheckedTicketId = "";
             } else {
-                emit TicketVerified(requestId, s_lastCheckedTicketId, false, response, err);
+                emit TicketVerified(
+                    requestId,
+                    s_lastCheckedTicketId,
+                    false,
+                    response,
+                    err
+                );
                 s_lastCheckedTicketId = "";
             }
         } else {
@@ -195,17 +207,19 @@ contract TicketInfoConsumer is FunctionsClient, ConfirmedOwner {
             if (err.length == 0 && response.length >= 32) {
                 remainingTickets = abi.decode(response, (uint256));
             }
-            
+
             emit Response(requestId, remainingTickets, response, err);
         }
     }
-    
+
     /**
      * @notice Check if a ticket has been used (returns cached result)
      * @param ticketId The ID of the ticket to check
      * @return isUsed Whether the ticket has been used
      */
-    function isTicketUsed(string calldata ticketId) external view returns (bool) {
+    function isTicketUsed(
+        string calldata ticketId
+    ) external view returns (bool) {
         return ticketUsageStatus[ticketId];
     }
 }
