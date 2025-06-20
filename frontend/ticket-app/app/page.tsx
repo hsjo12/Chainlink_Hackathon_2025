@@ -1,11 +1,13 @@
-import React from "react";
+'use client'
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarIcon, MapPinIcon } from "lucide-react";
 import {HeaderMenu} from "@/app/components/HeaderMenu";
 import Link from 'next/link';
 
-const events = [
+// Default events
+const defaultEvents = [
     {
         id: 1,
         title: "Tech Conference 2025",
@@ -30,6 +32,20 @@ const events = [
 ];
 
 export default function Home() {
+    const [events, setEvents] = useState(defaultEvents);
+
+    // Load events from localStorage on client-side
+    useEffect(() => {
+        const storedEvents = localStorage.getItem('events');
+        if (storedEvents) {
+            try {
+                const parsedEvents = JSON.parse(storedEvents);
+                setEvents([...defaultEvents, ...parsedEvents]);
+            } catch (error) {
+                console.error('Error parsing stored events:', error);
+            }
+        }
+    }, []);
     return (
         <main className="min-h-screen bg-gray-100 p-6">
             <HeaderMenu/>
@@ -40,7 +56,16 @@ export default function Home() {
 
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {events.map((event) => (
-                    <Card key={event.id} className="rounded-2xl shadow-md">
+                    <Card key={event.id} className="rounded-2xl shadow-md overflow-hidden">
+                        {event.image && (
+                            <div className="w-full h-48 overflow-hidden">
+                                <img 
+                                    src={event.image} 
+                                    alt={event.title} 
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                        )}
                         <CardContent className="p-6">
                             <h2 className="text-2xl font-semibold mb-2">{event.title}</h2>
                             <div className="flex items-center text-sm text-gray-500 mb-1">
@@ -52,8 +77,11 @@ export default function Home() {
                                 {event.location}
                             </div>
                             <p className="text-gray-700 mb-4">{event.summary}</p>
-                            {/*<Button className="m-1" >View Details</Button>*/}
-                            <Link href="/tickets"><Button>View Tickets</Button></Link>
+                            <div className="flex gap-2">
+                                <Link href={`/tickets?eventId=${event.id}`}><Button>View Tickets</Button></Link>
+                                {/*<Link href="/marketplace"><Button variant="outline">Marketplace</Button></Link>*/}
+                                <Link href={`/edit-event?eventId=${event.id}`}><Button variant="outline">Edit Event</Button></Link>
+                            </div>
                         </CardContent>
                     </Card>
                 ))}
