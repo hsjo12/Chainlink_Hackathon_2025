@@ -29,6 +29,10 @@ const STANDARD_EVENT_IMAGE_URI = "https://STANDARD.jpg";
 const STANDARD_PRICE = ethers.parseUnits("100", 8); // $100 with 8 decimals
 const STANDARD_MAX_SUPPLY = 1000n;
 
+const STANDING = 2;
+const STANDING_EVENT_IMAGE_URI = "https://STANDING.jpg";
+const STANDING_PRICE = ethers.parseUnits("50", 8); // $100 with 8 decimals
+const STANDING_MAX_SUPPLY = 1000n;
 module.exports = {
   SIGNER,
   FEE_RATE,
@@ -50,4 +54,8 @@ module.exports = {
   STANDARD_EVENT_IMAGE_URI,
   STANDARD_PRICE,
   STANDARD_MAX_SUPPLY,
+  STANDING,
+  STANDING_EVENT_IMAGE_URI,
+  STANDING_PRICE,
+  STANDING_MAX_SUPPLY,
 };

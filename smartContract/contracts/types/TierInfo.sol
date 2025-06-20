@@ -6,7 +6,8 @@ pragma solidity ^0.8.0;
  */
 enum Tier {
     VIP, // VIP tier with premium benefits
-    STANDARD // Standard tier with regular access
+    STANDARD, // Standard tier with regular access
+    STANDING // No specific seat and no check if seat is claimed in the mint function
 }
 /**
  * @dev Struct containing information for each ticket tier.

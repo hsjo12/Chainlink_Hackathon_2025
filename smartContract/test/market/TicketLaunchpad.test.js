@@ -7,13 +7,14 @@ const { ethers } = require("hardhat");
 const {
   getSampleEventStructSet,
   getSampleSeat,
-  getExpectedTokenURI,
   getMintSignatureParams,
   feeCalculator,
   faucetUSDC,
   getUSDCContractOnETHMainNet,
   getSampleMultipleSeats,
   getMintBatchSignatureParams,
+  getSampleStandingSeat,
+  getSampleMultipleStandingSeats,
 } = require("../shared/utilities");
 const {
   VIP,
@@ -181,6 +182,20 @@ describe("Ticket Test", () => {
       it("Should only allow the admin to mint a ticket with no payment", async () => {
         await ticketLaunchpad.adminMint(deployer.address, [sampleSeatData]);
         expect(await ticket.balanceOf(deployer.address)).to.eq(1);
+      });
+
+      it("Should mint tickets with no SeatAlreadyClaimed check", async () => {
+        const sampleStandingSeatData = getSampleStandingSeat();
+        const sampleMultipleStandingSeats = getSampleMultipleStandingSeats();
+        await ticketLaunchpad.adminMint(deployer.address, [
+          sampleStandingSeatData,
+        ]);
+        expect(await ticket.balanceOf(deployer.address)).to.eq(1);
+        await ticketLaunchpad.adminMint(
+          deployer.address,
+          sampleMultipleStandingSeats
+        );
+        expect(await ticket.balanceOf(deployer.address)).to.eq(4);
       });
     });
 

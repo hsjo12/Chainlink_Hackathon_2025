@@ -21,6 +21,10 @@ const {
   STANDARD_EVENT_IMAGE_URI,
   VIP_EVENT_IMAGE_URI,
   SIGNER,
+  STANDING_PRICE,
+  STANDING_MAX_SUPPLY,
+  STANDING_EVENT_IMAGE_URI,
+  STANDING,
 } = require("./constants");
 
 const deployProxy = async (logicName, initializer = "0x") => {
@@ -73,12 +77,17 @@ const getSampleEventStructSet = () => {
       EVENT_END_TIME,
     ],
 
-    tierIds: [VIP, STANDARD],
-    imageURIByTier: [VIP_EVENT_IMAGE_URI, STANDARD_EVENT_IMAGE_URI],
+    tierIds: [VIP, STANDARD, STANDING],
+    imageURIByTier: [
+      VIP_EVENT_IMAGE_URI,
+      STANDARD_EVENT_IMAGE_URI,
+      STANDING_EVENT_IMAGE_URI,
+    ],
 
     tierInfoList: [
       [VIP_PRICE, VIP_MAX_SUPPLY, 0],
       [STANDARD_PRICE, STANDARD_MAX_SUPPLY, 0],
+      [STANDING_PRICE, STANDING_MAX_SUPPLY, 0],
     ],
     paymentTokens: [USDC_ADDRESS_ON_ETH_MAIN_NET],
     priceFeeds: [USDC_USD_PRICE_FEED_ON_ETH_MAIN_NET],
@@ -89,6 +98,7 @@ function getExpectedTokenURI(eventDetails, tierImageURI, seat, tokenId) {
   let seatTier = "";
   if (seat.tier == VIP) seatTier = "VIP";
   if (seat.tier == STANDARD) seatTier = "STANDARD";
+  if (seat.tier == STANDING) seatTier = "STANDING";
   const metadata = {
     name: `${eventDetails.name}#${tokenId}`,
     description: eventDetails.description,
@@ -134,6 +144,16 @@ const getSampleMultipleSeats = () => {
   ];
 };
 
+const getSampleStandingSeat = () => {
+  return ["STANDING", "STANDING", 2];
+};
+const getSampleMultipleStandingSeats = () => {
+  return [
+    ["STANDING", "STANDING", 2],
+    ["STANDING", "STANDING", 2],
+    ["STANDING", "STANDING", 2],
+  ];
+};
 const getMintSignatureParams = async (
   to,
   seat,
@@ -194,6 +214,8 @@ module.exports = {
   getExpectedTokenURI,
   getSampleSeat,
   getSampleMultipleSeats,
+  getSampleStandingSeat,
+  getSampleMultipleStandingSeats,
   getMintSignatureParams,
   getMintBatchSignatureParams,
 };
