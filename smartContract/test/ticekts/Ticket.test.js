@@ -56,12 +56,20 @@ describe("Ticket Test", () => {
 
   context("Valid Scenarios", () => {
     it("Should return correct metadata (name, symbol, description, times, imageURIs, tokenURI)", async () => {
-      const [name, symbol, imageURI, description, startTime, endTime] =
-        eventDetails;
+      const [
+        name,
+        symbol,
+        imageURI,
+        description,
+        location,
+        startTime,
+        endTime,
+      ] = eventDetails;
       const [section, seatNumber, tier] = sampleSeatData;
       expect(await ticket.name()).to.eq(name);
       expect(await ticket.symbol()).to.eq(symbol);
       expect(await ticket.description()).to.eq(description);
+      expect(await ticket.location()).to.eq(location);
       expect(await ticket.startTime()).to.eq(startTime);
       expect(await ticket.endTime()).to.eq(endTime);
 
@@ -70,6 +78,7 @@ describe("Ticket Test", () => {
         symbol,
         imageURI,
         description,
+        location,
         startTime,
         endTime,
       };
@@ -94,6 +103,7 @@ describe("Ticket Test", () => {
       const NEW_SYMBOL = "NEW_SYMBOL";
       const NEW_IMAGE_URI = "NEW_IMAGE_URI";
       const NEW_DESC = "NEW_DESC";
+      const NEW_LOCATION = "NEW_LOCATION";
       const NEW_START_TIME = Math.floor(new Date().getTime() / 1000);
       const NEW_END_TIME = Math.floor(new Date().getTime() / 1000) * 3600;
 
@@ -102,6 +112,7 @@ describe("Ticket Test", () => {
         NEW_SYMBOL,
         NEW_IMAGE_URI,
         NEW_DESC,
+        NEW_LOCATION,
         NEW_START_TIME,
         NEW_END_TIME,
       ]);
@@ -109,6 +120,7 @@ describe("Ticket Test", () => {
       expect(await ticket.name()).to.eq(NEW_NAME);
       expect(await ticket.symbol()).to.eq(NEW_SYMBOL);
       expect(await ticket.description()).to.eq(NEW_DESC);
+      expect(await ticket.location()).to.eq(NEW_LOCATION);
       expect(await ticket.startTime()).to.eq(NEW_START_TIME);
       expect(await ticket.endTime()).to.eq(NEW_END_TIME);
 
@@ -137,8 +149,15 @@ describe("Ticket Test", () => {
     });
 
     it("Should revert when event times are invalid", async () => {
-      const [name, symbol, imageURI, description, startTime, endTime] =
-        eventDetails;
+      const [
+        name,
+        symbol,
+        imageURI,
+        description,
+        location,
+        startTime,
+        endTime,
+      ] = eventDetails;
 
       // startTime > endTime
       const invalidStartTime = startTime + endTime;
@@ -149,6 +168,7 @@ describe("Ticket Test", () => {
           symbol,
           imageURI,
           description,
+          location,
           invalidStartTime,
           endTime,
         ])
