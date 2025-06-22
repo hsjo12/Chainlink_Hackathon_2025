@@ -12,4 +12,5 @@ struct EventDetails {
     string location;
     uint64 startTime;
     uint64 endTime;
+    uint64 checkInStartTime; // Add ticket validation start time
 }
