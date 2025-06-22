@@ -30,6 +30,7 @@ export async function PUT(
         organizerAddress: parsedData.organizerAddress,
         ticketAddress: parsedData.ticketAddress,
         launchpadAddress: parsedData.launchpadAddress,
+        marketAddress: parsedData.marketAddress,
         platformFeePercent: parsedData.platformFeePercent,
         royaltyFeePercent: parsedData.royaltyFeePercent,
         maxPerWallet: parsedData.maxPerWallet,

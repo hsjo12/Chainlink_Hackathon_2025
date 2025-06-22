@@ -21,6 +21,7 @@ export const CreateEventSchema = z.object({
     .string()
     .min(1, 'Launchpad address is required')
     .optional(),
+  marketAddress: z.string().min(1, 'Market address is required').optional(),
   platformFeePercent: z
     .number()
     .min(0, 'Platform fee percentage must be at least 0')

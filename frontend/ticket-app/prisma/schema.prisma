@@ -37,6 +37,7 @@ model Event {
   organizerAddress String // Wallet address of the organizer
   ticketAddress    String? // Deployed ticket NFT contract address
   launchpadAddress String? // Launchpad contract address 
+  marketAddress    String? // Market contract address for secondary sales
 
   // Fee structure
   platformFeePercent Decimal @default(2.5) // Platform fee percentage
