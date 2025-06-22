@@ -1,5 +1,5 @@
 "use client";
-import { Button } from "@/components/ui/button";
+import { ShimmerButton } from "@/components/magicui/shimmer-button";
 import { LoadingSpinner } from "@/components/ui/loadingSpinner";
 import { useAppKit } from "@reown/appkit/react";
 import { useAppKitAccount } from "@reown/appkit/react";
@@ -14,29 +14,27 @@ export default function ConnectWallet() {
   }, []);
   if (!isClient) {
     return (
-      <Button variant="ghost" size="default" className="relative ">
+      <ShimmerButton>
         <LoadingSpinner className="absolute inset-0 m-auto" />
-        <span className="opacity-0">Connect</span>
-      </Button>
+        <span className="opacity-0">Connect Wallet</span>
+      </ShimmerButton>
     );
   }
 
   return (
     <>
       {isConnected ? (
-        <Button
-          onClick={() => open()}
-          className="tracking-wider md:text-lg font-medium"
-        >
-          {address?.slice(0, 4)}...{address?.slice(-4)}
-        </Button>
+        <ShimmerButton onClick={() => open()}>
+          <span className="whitespace-pre-wrap text-center text-sm font-medium leading-none tracking-tight text-white dark:from-white dark:to-slate-900/10 lg:text-lg">
+            {address?.slice(0, 4)}...{address?.slice(-4)}
+          </span>
+        </ShimmerButton>
       ) : (
-        <Button
-          onClick={() => open()}
-          className="tracking-wider md:text-lg font-medium"
-        >
-          Connect
-        </Button>
+        <ShimmerButton onClick={() => open()}>
+          <span className="whitespace-pre-wrap text-center text-sm font-medium leading-none tracking-tight text-white dark:from-white dark:to-slate-900/10 lg:text-lg">
+            Connect Wallet
+          </span>
+        </ShimmerButton>
       )}
     </>
   );
