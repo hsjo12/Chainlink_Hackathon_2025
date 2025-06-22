@@ -17,6 +17,7 @@ const EVENT_NAME = "TestEvent";
 const EVENT_SYMBOL = "TestEventSymbol";
 const EVENT_IMAGE_URI = "https://Cover.jpg";
 const EVENT_DESCRIPTION = "TestEventDescription";
+const EVENT_LOCATION = "Mala Vida, Austin, TX";
 const EVENT_START_TIME = BigInt(Math.floor(new Date().getTime() / 1000));
 const EVENT_END_TIME = BigInt(Math.floor(new Date().getTime() / 1000) + 3_600);
 const VIP = 0;
@@ -44,6 +45,7 @@ module.exports = {
   EVENT_SYMBOL,
   EVENT_IMAGE_URI,
   EVENT_DESCRIPTION,
+  EVENT_LOCATION,
   EVENT_START_TIME,
   EVENT_END_TIME,
   VIP,

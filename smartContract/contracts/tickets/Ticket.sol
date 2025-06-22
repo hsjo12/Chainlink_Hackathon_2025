@@ -227,6 +227,9 @@ contract Ticket is
                     '{"trait_type":"Tier","value":"',
                     _tierName(seat.tier),
                     '"},',
+                    '{"trait_type":"Location","value":"',
+                    eventDetails.location,
+                    '"},',
                     '{"trait_type":"Start Time","display_type":"date","value":',
                     _toString(eventDetails.startTime),
                     "},",
@@ -276,6 +279,13 @@ contract Ticket is
      */
     function description() public view returns (string memory) {
         return _eventDetails.description;
+    }
+
+    /**
+     * @notice Returns the event location.
+     */
+    function location() public view returns (string memory) {
+        return _eventDetails.location;
     }
 
     /**

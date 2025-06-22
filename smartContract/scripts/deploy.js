@@ -1,4 +1,4 @@
-const { ethers, ignition } = require("hardhat");
+const { ignition } = require("hardhat");
 const {
   configModule,
   feeManagerModule,

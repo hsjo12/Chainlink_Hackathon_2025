@@ -25,6 +25,7 @@ const {
   STANDING_MAX_SUPPLY,
   STANDING_EVENT_IMAGE_URI,
   STANDING,
+  EVENT_LOCATION,
 } = require("./constants");
 
 const deployProxy = async (logicName, initializer = "0x") => {
@@ -73,6 +74,7 @@ const getSampleEventStructSet = () => {
       EVENT_SYMBOL,
       EVENT_IMAGE_URI,
       EVENT_DESCRIPTION,
+      EVENT_LOCATION,
       EVENT_START_TIME,
       EVENT_END_TIME,
     ],
@@ -115,6 +117,10 @@ function getExpectedTokenURI(eventDetails, tierImageURI, seat, tokenId) {
       {
         trait_type: "Tier",
         value: seatTier,
+      },
+      {
+        trait_type: "Location",
+        value: "Mala Vida, Austin, TX",
       },
       {
         trait_type: "Start Time",

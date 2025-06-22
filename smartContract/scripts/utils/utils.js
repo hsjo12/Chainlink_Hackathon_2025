@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const hre = require("hardhat");
 const createDeploymentArtifacts = async (contract, contractName) => {
   const chainId = hre.network.config.chainId;
 

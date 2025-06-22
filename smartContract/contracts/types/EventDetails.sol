@@ -9,6 +9,7 @@ struct EventDetails {
     string symbol;
     string coverImageURI;
     string description;
+    string location;
     uint64 startTime;
     uint64 endTime;
 }
