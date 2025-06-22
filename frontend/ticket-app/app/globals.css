@@ -75,7 +75,7 @@ footer {
   color: white;
   padding: 1rem;
   text-align: center;
-  bottom:0;
+  bottom: 0;
 }
 
 :root {
@@ -166,6 +166,19 @@ footer {
   }
 }
 
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 .animate-slide-up {
   animation: slide-up 0.3s ease-out forwards;
+}
+
+.animate-spin {
+  animation: spin 1.2s ease-in-out infinite;
 }
