@@ -28,6 +28,9 @@ contract TicketInfoConsumer is FunctionsClient, ConfirmedOwner {
 
     /// @notice Last ticket usage status
     bool public s_lastTicketUsed;
+    
+    /// @notice Mapping from request ID to associated data (for derived contracts)
+    mapping(bytes32 => uint256) internal requestToData;
 
     /// @dev Custom error for mismatched request fulfillment
     error UnexpectedRequestID(bytes32 requestId);
@@ -67,15 +70,15 @@ contract TicketInfoConsumer is FunctionsClient, ConfirmedOwner {
      * @dev Fetches all tickets, finds the one with matching ID, returns its `remaining` value as uint256
      */
     string availabilitySource =
-        "const eventId = args[0];"
-        "const url = 'https://6841cf3ad48516d1d35cf71c.mockapi.io/tickets/' + eventId;"
-        "const response = await Functions.makeHttpRequest({ url });"
-        "if (response.error) { throw Error('Request failed'); }"
-        "const data = response.data;"
-        "if (!data || typeof data !== 'object') throw Error(`Invalid response`);"
-        "const rawRemaining = data.remaining;"
-        "const available = Number(rawRemaining);"
-        "if (!Number.isFinite(available)) throw Error(`Invalid ticket count: ${rawRemaining}`);"
+        "const eventId = args[0];" 
+        "const url = 'https://6841cf3ad48516d1d35cf71c.mockapi.io/tickets/' + eventId;" 
+        "const response = await Functions.makeHttpRequest({ url });" 
+        "if (response.error) { throw Error('Request failed'); }" 
+        "const data = response.data;" 
+        "if (!data || typeof data !== 'object') throw Error(`Invalid response`);" 
+        "const rawRemaining = data.remaining;" 
+        "const available = Number(rawRemaining);" 
+        "if (!Number.isFinite(available)) throw Error(`Invalid ticket count: ${rawRemaining}`);" 
         "return Functions.encodeUint256(available);";
 
     /**
@@ -83,13 +86,13 @@ contract TicketInfoConsumer is FunctionsClient, ConfirmedOwner {
      * @dev Fetches ticket data and checks if the specified ticket has been used
      */
     string ticketVerificationSource =
-        "const ticketId = args[0];"
-        "const url = 'https://6841cf3ad48516d1d35cf71c.mockapi.io/verifytickets/' + ticketId;"
-        "const response = await Functions.makeHttpRequest({ url });"
-        "if (response.error) { throw Error('Request failed'); }"
-        "const data = response.data;"
-        "if (!data || typeof data !== 'object') throw Error(`Ticket ID ${ticketId} not found or invalid`);"
-        "const isUsed = data.used === true;"
+        "const ticketId = args[0];" 
+        "const url = 'https://6841cf3ad48516d1d35cf71c.mockapi.io/verifytickets/' + ticketId;" 
+        "const response = await Functions.makeHttpRequest({ url });" 
+        "if (response.error) { throw Error('Request failed'); }" 
+        "const data = response.data;" 
+        "if (!data || typeof data !== 'object') throw Error(`Ticket ID ${ticketId} not found or invalid`);" 
+        "const isUsed = data.used === true;" 
         "return Functions.encodeUint256(isUsed ? 1 : 0);";
 
     /**
@@ -130,7 +133,7 @@ contract TicketInfoConsumer is FunctionsClient, ConfirmedOwner {
     function verifyTicketUsage(
         uint64 subscriptionId,
         string calldata ticketId
-    ) external onlyOwner returns (bytes32 requestId) {
+    ) public virtual onlyOwner returns (bytes32 requestId) {
         if (bytes(ticketId).length == 0) {
             revert InvalidTicketID(ticketId);
         }
@@ -163,7 +166,7 @@ contract TicketInfoConsumer is FunctionsClient, ConfirmedOwner {
         bytes32 requestId,
         bytes memory response,
         bytes memory err
-    ) internal override {
+    ) internal virtual override {
         if (requestId != s_lastRequestId) {
             revert UnexpectedRequestID(requestId);
         }
@@ -221,5 +224,23 @@ contract TicketInfoConsumer is FunctionsClient, ConfirmedOwner {
         string calldata ticketId
     ) external view returns (bool) {
         return ticketUsageStatus[ticketId];
+    }
+    
+    /**
+     * @notice Associate a request ID with custom data (for derived contracts)
+     * @param requestId The request ID to associate
+     * @param data The data to associate with the request ID
+     */
+    function _setRequestData(bytes32 requestId, uint256 data) internal {
+        requestToData[requestId] = data;
+    }
+    
+    /**
+     * @notice Get data associated with a request ID (for derived contracts)
+     * @param requestId The request ID to get data for
+     * @return data The associated data
+     */
+    function _getRequestData(bytes32 requestId) internal view returns (uint256) {
+        return requestToData[requestId];
     }
 }
