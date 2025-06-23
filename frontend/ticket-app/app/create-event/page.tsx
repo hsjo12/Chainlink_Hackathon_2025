@@ -1,4 +1,4 @@
-'use client'
+"use client";
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -37,7 +37,9 @@ export default function CreateEventPage() {
   const [ticketTypes, setTicketTypes] = useState<TicketType[]>([
     { id: "regular", name: "Regular", price: "", quantity: "" },
   ]);
-  const [selectedCryptocurrencies, setSelectedCryptocurrencies] = useState<string[]>(["usd"]);
+  const [selectedCryptocurrencies, setSelectedCryptocurrencies] = useState<
+    string[]
+  >(["usd"]);
   const [tokenLink, setTokenLink] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -47,7 +49,7 @@ export default function CreateEventPage() {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setImageFile(file);
-      
+
       // Create preview URL
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -74,7 +76,11 @@ export default function CreateEventPage() {
   };
 
   // Update ticket type details
-  const updateTicketType = (id: string, field: keyof TicketType, value: string) => {
+  const updateTicketType = (
+    id: string,
+    field: keyof TicketType,
+    value: string
+  ) => {
     setTicketTypes(
       ticketTypes.map((ticket) =>
         ticket.id === id ? { ...ticket, [field]: value } : ticket
@@ -101,7 +107,7 @@ export default function CreateEventPage() {
     try {
       // In a real application, you would upload the image to a server
       // and save the event data to a database or blockchain
-      
+
       // For this demo, we'll simulate a successful submission
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
@@ -113,7 +119,7 @@ export default function CreateEventPage() {
         location,
         summary: description,
         image: imagePreview, // In a real app, this would be a URL to the uploaded image
-        tickets: ticketTypes.map(ticket => ({
+        tickets: ticketTypes.map((ticket) => ({
           type: ticket.name,
           price: parseFloat(ticket.price),
           quantity: parseInt(ticket.quantity),
@@ -125,12 +131,12 @@ export default function CreateEventPage() {
       // In a real application, you would save this to a database or blockchain
       console.log("New event created:", newEvent);
 
-      // For demo purposes, we'll store it in localStorage to display on the home page
-      const existingEvents = JSON.parse(localStorage.getItem('events') || '[]');
-      localStorage.setItem('events', JSON.stringify([...existingEvents, newEvent]));
+      // // For demo purposes, we'll store it in localStorage to display on the home page
+      // const existingEvents = JSON.parse(localStorage.getItem('events') || '[]');
+      // localStorage.setItem('events', JSON.stringify([...existingEvents, newEvent]));
 
-      // Navigate to the home page
-      router.push('/');
+      // // Navigate to the home page
+      // router.push('/');
     } catch (error) {
       console.error("Error creating event:", error);
     } finally {
@@ -141,15 +147,15 @@ export default function CreateEventPage() {
   return (
     <main className="min-h-screen bg-gray-100 p-6">
       <HeaderMenu />
-      
+
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">Create New Event</h1>
-        
+
         <form onSubmit={handleSubmit}>
           <Card className="mb-6">
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-4">Event Details</h2>
-              
+
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="title">Event Title</Label>
@@ -161,7 +167,7 @@ export default function CreateEventPage() {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="description">Event Description</Label>
                   <Textarea
@@ -173,7 +179,7 @@ export default function CreateEventPage() {
                     required
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="location">Location</Label>
@@ -185,7 +191,7 @@ export default function CreateEventPage() {
                       required
                     />
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="date">Date</Label>
                     <Input
@@ -197,7 +203,7 @@ export default function CreateEventPage() {
                     />
                   </div>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="image">Event Image</Label>
                   <div className="mt-1 flex items-center">
@@ -232,7 +238,7 @@ export default function CreateEventPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card className="mb-6">
             <CardContent className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -248,7 +254,7 @@ export default function CreateEventPage() {
                   Add Ticket Type
                 </Button>
               </div>
-              
+
               <div className="space-y-6">
                 {ticketTypes.map((ticket) => (
                   <div key={ticket.id} className="p-4 border rounded-lg">
@@ -266,7 +272,7 @@ export default function CreateEventPage() {
                         </Button>
                       )}
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <Label htmlFor={`${ticket.id}-name`}>Name</Label>
@@ -280,7 +286,7 @@ export default function CreateEventPage() {
                           required
                         />
                       </div>
-                      
+
                       <div>
                         <Label htmlFor={`${ticket.id}-price`}>Price</Label>
                         <Input
@@ -296,16 +302,22 @@ export default function CreateEventPage() {
                           required
                         />
                       </div>
-                      
+
                       <div>
-                        <Label htmlFor={`${ticket.id}-quantity`}>Quantity</Label>
+                        <Label htmlFor={`${ticket.id}-quantity`}>
+                          Quantity
+                        </Label>
                         <Input
                           id={`${ticket.id}-quantity`}
                           type="number"
                           min="1"
                           value={ticket.quantity}
                           onChange={(e) =>
-                            updateTicketType(ticket.id, "quantity", e.target.value)
+                            updateTicketType(
+                              ticket.id,
+                              "quantity",
+                              e.target.value
+                            )
                           }
                           placeholder="Number of tickets"
                           required
@@ -317,11 +329,11 @@ export default function CreateEventPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card className="mb-6">
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-4">Payment Options</h2>
-              
+
               <div className="space-y-4">
                 <div>
                   <Label className="block mb-2">
@@ -337,14 +349,17 @@ export default function CreateEventPage() {
                           onChange={() => toggleCryptocurrency(crypto.id)}
                           className="mr-2"
                         />
-                        <Label htmlFor={`crypto-${crypto.id}`} className="cursor-pointer">
+                        <Label
+                          htmlFor={`crypto-${crypto.id}`}
+                          className="cursor-pointer"
+                        >
                           {crypto.name}
                         </Label>
                       </div>
                     ))}
                   </div>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="tokenLink">Token Link (Optional)</Label>
                   <Input
@@ -354,19 +369,16 @@ export default function CreateEventPage() {
                     placeholder="https://..."
                   />
                   <p className="text-sm text-gray-500 mt-1">
-                    If you have a custom token, provide the contract address or link
+                    If you have a custom token, provide the contract address or
+                    link
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          
+
           <div className="flex justify-end">
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-6"
-            >
+            <Button type="submit" disabled={isSubmitting} className="px-6">
               {isSubmitting ? "Creating Event..." : "Create Event"}
             </Button>
           </div>
