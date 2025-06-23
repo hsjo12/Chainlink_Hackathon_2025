@@ -236,20 +236,17 @@ contract SecondaryMarket is
         
         // Check if the event has ended (alternative to checking if the ticket has been used)
         if (bytes(ticketId).length > 0) {
-        // Assume nftContract is a Ticket contract
-        Ticket ticketContract = Ticket(nftContract);
-        uint64 eventEndTime = ticketContract.endTime();
-        uint64 checkInStartTime = ticketContract.checkInStartTime();
-        
-        if (block.timestamp > eventEndTime) {
-            revert EventEnded();
+            // Assume nftContract is a Ticket contract
+            Ticket ticketContract = Ticket(nftContract);
+            uint64 eventEndTime = ticketContract.endTime();
+            
+            if (block.timestamp > eventEndTime) {
+                revert EventEnded();
+            }
+            
+            
         }
-        
-        // Check if check-in has started
-        if (block.timestamp > checkInStartTime) {
-            revert CheckInStarted();
-        }
-        }
+    }
         
         _listingIds.increment();
         uint256 listingId = _listingIds.current();
@@ -324,17 +321,13 @@ contract SecondaryMarket is
         if (bytes(listing.ticketId).length > 0) {
             Ticket ticketContract = Ticket(listing.nftContract);
             uint64 eventEndTime = ticketContract.endTime();
-            uint64 checkInStartTime = ticketContract.checkInStartTime();
+            
             
             if (block.timestamp > eventEndTime) {
                 revert EventEnded();
             }
-            
-            // Check if check-in has started
-            if (block.timestamp > checkInStartTime) {
-                revert CheckInStarted();
-            }
         }
+            
         
         // Mark listing as inactive
         listing.active = false;

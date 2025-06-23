@@ -69,9 +69,6 @@ contract Ticket is
         initializerERC721A
         onlyValidTime(eventDetails_.startTime, eventDetails_.endTime)
     {
-        // Ensure check-in start time is between event start time and end time
-        if (eventDetails_.checkInStartTime < eventDetails_.startTime || 
-            eventDetails_.checkInStartTime > eventDetails_.endTime) revert InvalidTime();
             
         __ERC721A_init(eventDetails_.name, eventDetails_.symbol);
         __ERC721ABurnable_init();
@@ -153,9 +150,6 @@ contract Ticket is
         onlyOwner
         onlyValidTime(eventDetails_.startTime, eventDetails_.endTime)
     {
-        // Ensure check-in start time is between event start time and end time
-        if (eventDetails_.checkInStartTime < eventDetails_.startTime || 
-            eventDetails_.checkInStartTime > eventDetails_.endTime) revert InvalidTime();
             
         _eventDetails = eventDetails_;
     }
@@ -301,13 +295,6 @@ contract Ticket is
      */
     function startTime() public view returns (uint64) {
         return _eventDetails.startTime;
-    }
-
-    /**
-     * @notice Returns the event check-in start timestamp.
-     */
-    function checkInStartTime() public view returns (uint64) {
-        return _eventDetails.checkInStartTime;
     }
 
     /**
