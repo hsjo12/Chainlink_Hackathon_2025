@@ -4,7 +4,8 @@ pragma solidity 0.8.30;
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
+import { FunctionsClient } from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
 import "../proxy/UUPSAccessControl.sol";
 import "../ticketInfo/TicketInfoConsumer.sol";
 import "../tickets/Ticket.sol"; // Add Ticket contract import to access event time
@@ -20,12 +21,12 @@ contract SecondaryMarket is
     PausableUpgradeable,
     TicketInfoConsumer
 {
-    using CountersUpgradeable for CountersUpgradeable.Counter;
+    using Counters for Counters.Counter;
 
     // ============ State Variables ============
     
     /// @notice Counter for listing IDs
-    CountersUpgradeable.Counter private _listingIds;
+    Counters.Counter private _listingIds;
     
     /// @notice Platform fee percentage (basis points, e.g., 250 = 2.5%)
     uint256 public platformFeePercent;
@@ -139,7 +140,6 @@ contract SecondaryMarket is
     error InvalidFeePercent();
     error ZeroAddress();
     error TicketAlreadyUsed(string ticketId);
-    error InvalidTicketID(string ticketId);
     error EventEnded();
     error TicketNotFresh(string ticketId);
 
@@ -246,7 +246,7 @@ contract SecondaryMarket is
             
             
         }
-    }
+
         
         _listingIds.increment();
         uint256 listingId = _listingIds.current();
@@ -584,9 +584,8 @@ contract SecondaryMarket is
         override 
         onlyRole(UPGRADER) 
     {}
-}
 
-/**
+    /**
  * @notice Override fulfillRequest callback function to handle ticket verification results
  * @param requestId The request ID being fulfilled
  * @param response The raw response returned from the JavaScript function
@@ -596,7 +595,7 @@ function fulfillRequest(
     bytes32 requestId,
     bytes memory response,
     bytes memory err
-) internal override {
+) internal override(TicketInfoConsumer) {
     // First call the parent contract's fulfillRequest to handle basic logic
     super.fulfillRequest(requestId, response, err);
     
@@ -634,4 +633,5 @@ function fulfillRequest(
             delete requestToListing[requestId];
         }
     }
+}
 }
