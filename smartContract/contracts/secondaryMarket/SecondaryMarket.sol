@@ -17,6 +17,12 @@ contract SecondaryMarket is
     SecondaryMarketVerification,
     SecondaryMarketAdmin
 {
-    // This contract inherits all functionality from its parent contracts
-    // No additional implementation needed here
+    function fulfillRequest(
+        bytes32 requestId,
+        bytes memory response,
+        bytes memory err
+    ) internal override(SecondaryMarketVerification, TicketInfoConsumer) {
+
+        SecondaryMarketVerification.fulfillRequest(requestId, response, err);
+    }
 }

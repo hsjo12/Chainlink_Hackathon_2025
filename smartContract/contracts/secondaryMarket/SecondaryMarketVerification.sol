@@ -19,7 +19,7 @@ contract SecondaryMarketVerification is SecondaryMarketCore {
         bytes32 requestId,
         bytes memory response,
         bytes memory err
-    ) internal override(TicketInfoConsumer) {
+    ) internal virtual override(TicketInfoConsumer) {
         // First call the parent contract's fulfillRequest to handle basic logic
         super.fulfillRequest(requestId, response, err);
         
