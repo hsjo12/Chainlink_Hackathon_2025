@@ -1,0 +1,1046 @@
+{
+	"compiler": {
+		"version": "0.8.30+commit.73712a01"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"name": "EmptyArgs",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "EmptySource",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "EventEnded",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "InsufficientPayment",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "InvalidDuration",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "InvalidFeePercent",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "InvalidPrice",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "ticketId",
+						"type": "string"
+					}
+				],
+				"name": "InvalidTicketID",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "ListingExpired",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "ListingNotActive",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "ListingNotFound",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "NoInlineSecrets",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "NotSeller",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "NotTokenOwner",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "OnlyRouterCanFulfill",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "ticketId",
+						"type": "string"
+					}
+				],
+				"name": "TicketAlreadyUsed",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "ticketId",
+						"type": "string"
+					}
+				],
+				"name": "TicketNotFresh",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "TokenAlreadyListed",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "TokenNotApproved",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "TransferFailed",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "requestId",
+						"type": "bytes32"
+					}
+				],
+				"name": "UnexpectedRequestID",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "UnsupportedContract",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "ZeroAddress",
+				"type": "error"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "nftContract",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "bool",
+						"name": "supported",
+						"type": "bool"
+					}
+				],
+				"name": "ContractSupportUpdated",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "newFeeRecipient",
+						"type": "address"
+					}
+				],
+				"name": "FeeRecipientUpdated",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "listingId",
+						"type": "uint256"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "seller",
+						"type": "address"
+					}
+				],
+				"name": "ListingCancelled",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "listingId",
+						"type": "uint256"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "nftContract",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "seller",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "price",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "startTime",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "endTime",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "ticketId",
+						"type": "string"
+					}
+				],
+				"name": "ListingCreated",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "listingId",
+						"type": "uint256"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "buyer",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "seller",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "price",
+						"type": "uint256"
+					}
+				],
+				"name": "ListingPurchased",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "listingId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "ticketId",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "bool",
+						"name": "verified",
+						"type": "bool"
+					}
+				],
+				"name": "ListingVerified",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "from",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					}
+				],
+				"name": "OwnershipTransferRequested",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "from",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					}
+				],
+				"name": "OwnershipTransferred",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "newFeePercent",
+						"type": "uint256"
+					}
+				],
+				"name": "PlatformFeeUpdated",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "id",
+						"type": "bytes32"
+					}
+				],
+				"name": "RequestFulfilled",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "id",
+						"type": "bytes32"
+					}
+				],
+				"name": "RequestSent",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "requestId",
+						"type": "bytes32"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "remainingTickets",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "bytes",
+						"name": "rawResponse",
+						"type": "bytes"
+					},
+					{
+						"indexed": false,
+						"internalType": "bytes",
+						"name": "error",
+						"type": "bytes"
+					}
+				],
+				"name": "Response",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "ticketId",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "enum SecondaryMarketStorage.TicketStatus",
+						"name": "status",
+						"type": "uint8"
+					}
+				],
+				"name": "TicketStatusUpdated",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "listingId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "ticketId",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "bytes32",
+						"name": "requestId",
+						"type": "bytes32"
+					}
+				],
+				"name": "TicketVerificationRequested",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "requestId",
+						"type": "bytes32"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "ticketId",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "bool",
+						"name": "isUsed",
+						"type": "bool"
+					},
+					{
+						"indexed": false,
+						"internalType": "bytes",
+						"name": "rawResponse",
+						"type": "bytes"
+					},
+					{
+						"indexed": false,
+						"internalType": "bytes",
+						"name": "error",
+						"type": "bytes"
+					}
+				],
+				"name": "TicketVerified",
+				"type": "event"
+			},
+			{
+				"inputs": [],
+				"name": "acceptOwnership",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "feeRecipient",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "requestId",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "bytes",
+						"name": "response",
+						"type": "bytes"
+					},
+					{
+						"internalType": "bytes",
+						"name": "err",
+						"type": "bytes"
+					}
+				],
+				"name": "handleOracleFulfillment",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "ticketId",
+						"type": "string"
+					}
+				],
+				"name": "isTicketUsed",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "maxListingDuration",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "minListingDuration",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "owner",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "platformFeePercent",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "remainingTickets",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint64",
+						"name": "subscriptionId",
+						"type": "uint64"
+					},
+					{
+						"internalType": "string[]",
+						"name": "args",
+						"type": "string[]"
+					}
+				],
+				"name": "requestRemainingTickets",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "requestId",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "s_lastCheckedTicketId",
+				"outputs": [
+					{
+						"internalType": "string",
+						"name": "",
+						"type": "string"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "s_lastError",
+				"outputs": [
+					{
+						"internalType": "bytes",
+						"name": "",
+						"type": "bytes"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "s_lastRequestId",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "s_lastResponse",
+				"outputs": [
+					{
+						"internalType": "bytes",
+						"name": "",
+						"type": "bytes"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "s_lastTicketUsed",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "subscriptionId",
+				"outputs": [
+					{
+						"internalType": "uint64",
+						"name": "",
+						"type": "uint64"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"name": "supportedContracts",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "",
+						"type": "string"
+					}
+				],
+				"name": "ticketUsageStatus",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					}
+				],
+				"name": "transferOwnership",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint64",
+						"name": "subscriptionId",
+						"type": "uint64"
+					},
+					{
+						"internalType": "string",
+						"name": "ticketId",
+						"type": "string"
+					}
+				],
+				"name": "verifyTicketUsage",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "requestId",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"details": "Contains all state variables and events for the secondary market",
+			"errors": {
+				"InvalidTicketID(string)": [
+					{
+						"details": "Custom error for invalid ticket ID"
+					}
+				],
+				"UnexpectedRequestID(bytes32)": [
+					{
+						"details": "Custom error for mismatched request fulfillment"
+					}
+				]
+			},
+			"kind": "dev",
+			"methods": {
+				"handleOracleFulfillment(bytes32,bytes,bytes)": {
+					"details": "Either response or error parameter will be set, but never both.",
+					"params": {
+						"err": "Aggregated error either from the request's source code or from the execution pipeline.",
+						"requestId": "The requestId returned by FunctionsClient.sendRequest().",
+						"response": "Aggregated response from the request's source code."
+					}
+				},
+				"isTicketUsed(string)": {
+					"params": {
+						"ticketId": "The ID of the ticket to check"
+					},
+					"returns": {
+						"_0": "isUsed Whether the ticket has been used"
+					}
+				},
+				"requestRemainingTickets(uint64,string[])": {
+					"params": {
+						"args": "Function arguments; args[0] should be the event ID string",
+						"subscriptionId": "Your Chainlink Functions subscription ID"
+					},
+					"returns": {
+						"requestId": "The ID of the request sent"
+					}
+				},
+				"verifyTicketUsage(uint64,string)": {
+					"params": {
+						"subscriptionId": "Your Chainlink Functions subscription ID",
+						"ticketId": "The ID of the ticket to verify"
+					},
+					"returns": {
+						"requestId": "The ID of the request sent"
+					}
+				}
+			},
+			"title": "SecondaryMarketStorage",
+			"version": 1
+		},
+		"userdoc": {
+			"events": {
+				"Response(bytes32,uint256,bytes,bytes)": {
+					"notice": "Emitted when a Chainlink Functions request is fulfilled for availability check"
+				},
+				"TicketVerified(bytes32,string,bool,bytes,bytes)": {
+					"notice": "Emitted when a ticket usage status is verified"
+				}
+			},
+			"kind": "user",
+			"methods": {
+				"acceptOwnership()": {
+					"notice": "允许接收者完成所有权转移"
+				},
+				"feeRecipient()": {
+					"notice": "Platform fee recipient"
+				},
+				"handleOracleFulfillment(bytes32,bytes,bytes)": {
+					"notice": "Chainlink Functions response handler called by the Functions Router during fullilment from the designated transmitter node in an OCR round."
+				},
+				"isTicketUsed(string)": {
+					"notice": "Check if a ticket has been used (returns cached result)"
+				},
+				"maxListingDuration()": {
+					"notice": "Maximum listing duration in seconds"
+				},
+				"minListingDuration()": {
+					"notice": "Minimum listing duration in seconds"
+				},
+				"owner()": {
+					"notice": "获取当前所有者"
+				},
+				"platformFeePercent()": {
+					"notice": "Platform fee percentage (basis points, e.g., 250 = 2.5%)"
+				},
+				"remainingTickets()": {
+					"notice": "Latest number of remaining tickets fetched from the API"
+				},
+				"requestRemainingTickets(uint64,string[])": {
+					"notice": "Sends a Chainlink Functions request to fetch remaining ticket count"
+				},
+				"s_lastCheckedTicketId()": {
+					"notice": "Last ticket ID that was checked"
+				},
+				"s_lastTicketUsed()": {
+					"notice": "Last ticket usage status"
+				},
+				"subscriptionId()": {
+					"notice": "Chainlink Functions subscription ID for ticket verification"
+				},
+				"supportedContracts(address)": {
+					"notice": "Mapping to track if an NFT contract is supported"
+				},
+				"ticketUsageStatus(string)": {
+					"notice": "Mapping to store ticket usage status (ticketId => isUsed)"
+				},
+				"transferOwnership(address)": {
+					"notice": "允许所有者开始将所有权转移到新地址"
+				},
+				"verifyTicketUsage(uint64,string)": {
+					"notice": "Sends a Chainlink Functions request to verify if a ticket has been used"
+				}
+			},
+			"notice": "Storage contract for the secondary market system",
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"smartContract/contracts/secondaryMarket/SecondaryMarketStorage.sol": "SecondaryMarketStorage"
+		},
+		"evmVersion": "prague",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol": {
+			"keccak256": "0x40224641403cb9fa03d4f060296d7420a9ff11b46abadc958ae048459205e397",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://7d1dabc1ca292b93c373589b1827f01b404d0d66669f58c03b6d2f92a6e64f2c",
+				"dweb:/ipfs/QmP3yzaUfqUqb7qk4fBYw8U6rMgWsSgNKjSUGJncjwaHCq"
+			]
+		},
+		"@chainlink/contracts/src/v0.8/functions/v1_0_0/interfaces/IFunctionsClient.sol": {
+			"keccak256": "0x6117b82e7c4eec44ce557b0fc8bc1ac5f49e5d160ac6d4485452d6aafdd762ff",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://0e0828ef423afef9f6f709bb173a7e3991fe555bf9337a4941d65da525ac4ad3",
+				"dweb:/ipfs/QmXz1jHRZFTqdnNxP2tffVQ9NnUE1xgtBMRWuyUrTVY4pm"
+			]
+		},
+		"@chainlink/contracts/src/v0.8/functions/v1_0_0/interfaces/IFunctionsRouter.sol": {
+			"keccak256": "0x44db41e8ff90c2828ca0ada125abc4b411921a86514a4a047fd9fd43ba9d7e08",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://c4c3228edc2cff7c55301d3764e54cd7ada6af81ef9aadf8bc116a2c982523d6",
+				"dweb:/ipfs/QmXjJQgCu2gvX6QQJ9GC1gEoy3vrmpf1PiRPLqWqKddwRe"
+			]
+		},
+		"@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol": {
+			"keccak256": "0xed75be0eaba358d468f1fe18adc377d5044f57eff0070081f884a1f212d0adc2",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://ea7c96e993b253723ed5461008c34b847d7b067221736068d45f029db4d92b0d",
+				"dweb:/ipfs/QmTMMXAWXeDgSChnToydej6e3p331KiJZT3S27ZiPkht9t"
+			]
+		},
+		"@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsResponse.sol": {
+			"keccak256": "0xc72eb037effef32146f7cd4086af00f44f28c8649d891e5e404fec5fda7e802b",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://eeeaeadc797b7656fd30201ab8c8ed24fe8fb3f83a480142bb55c7c7babb2b4b",
+				"dweb:/ipfs/Qmdb55a1iWJetog7qUpZ6FHKGSA8g3Vu68LGsXfqfec9k5"
+			]
+		},
+		"@chainlink/contracts/src/v0.8/shared/interfaces/IOwnable.sol": {
+			"keccak256": "0x885de72b7b4e4f1bf8ba817a3f2bcc37fd9022d342c4ce76782151c30122d767",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://17c636625a5d29a140612db496d2cca9fb4b48c673adb0fd7b3957d287e75921",
+				"dweb:/ipfs/QmNoBX8TY424bdQWyQC7y3kpKfgxyWxhLw7KEhhEEoBN9q"
+			]
+		},
+		"@chainlink/contracts/src/v0.8/vendor/@ensdomains/buffer/v0.1.0/Buffer.sol": {
+			"keccak256": "0x0d86b367813922094e02594a406ba89f5e97d3d74ec2ce3c4032566840e302b0",
+			"license": "BSD-2-Clause",
+			"urls": [
+				"bzz-raw://2c65ceaef4ce70e8638275da75f4c384d4e404d588fcac404028da7e634c81a8",
+				"dweb:/ipfs/QmV3vMmjseNombFaRGw7K4PgDj6rrWcEzNY9S5jtLAdJqG"
+			]
+		},
+		"@chainlink/contracts/src/v0.8/vendor/solidity-cborutils/v2.0.0/CBOR.sol": {
+			"keccak256": "0xdecf04203502670ac72ba466c75e4f87f4419907365005f0d73e7d07ee3e5715",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://39c9937cf45f840cf3a45a83dec3719dbd2f1d71198088db48b909ec656f77dd",
+				"dweb:/ipfs/QmQx9mEREaFyJGC2KpqWBqBV712NY8vUBrcqTR4RdVNBiu"
+			]
+		},
+		"@openzeppelin/contracts/utils/Counters.sol": {
+			"keccak256": "0xf0018c2440fbe238dd3a8732fa8e17a0f9dce84d31451dc8a32f6d62b349c9f1",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://59e1c62884d55b70f3ae5432b44bb3166ad71ae3acd19c57ab6ddc3c87c325ee",
+				"dweb:/ipfs/QmezuXg5GK5oeA4F91EZhozBFekhq5TD966bHPH18cCqhu"
+			]
+		},
+		"smartContract/contracts/chainlink/ConfirmedOwnerUpgradeable.sol": {
+			"keccak256": "0xa1cbb0d8a151a233bbad57e75daa2353f7854fe2b86e28efdecf35db131486f0",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://eae5fed218f991f5b59d12b3c8e9fdb7b05c03bcbbd769865597739ff2a297e1",
+				"dweb:/ipfs/QmWfGD3rz3JSTBpZ6hDHNsk7h2CeDH2StNe2QFFDyjRvcY"
+			]
+		},
+		"smartContract/contracts/chainlink/FunctionsClientUpgradeable.sol": {
+			"keccak256": "0x9f250d96c12fbcb1b7d9a2cf97abd485120d7e395bdd6ed831ea6bd76ae0a4cc",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://e1167b7ac5526f0503280fffac21b0adad2739a245ea8175d5f0fe44d69fa709",
+				"dweb:/ipfs/QmZNfMaCwCJxAhoW4MrgoGw1Kvj3SwtphtyJ1tX9SyHhob"
+			]
+		},
+		"smartContract/contracts/secondaryMarket/SecondaryMarketStorage.sol": {
+			"keccak256": "0xe1a6362b68ab5bd7abd4e1419a30afd945938549b847065c79089598ca8aad9f",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://9a14def69a206ae78e26adeb2d42f6ef7cc531e5b19f50fd6ad824170bcb574a",
+				"dweb:/ipfs/QmXoNQAXNBAjQBzT9TofNtVeTNoXioUortSy4n1BCq4BPb"
+			]
+		},
+		"smartContract/contracts/ticketInfo/TicketInfoConsumer.sol": {
+			"keccak256": "0x9fda64032967b0d458f1b84394c07c6769c8514f393aeeba720f05fddd124d92",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://6b16054b8a8517feb58cefa934939d00ffadabb9117a6915a3c75b4b0689fc26",
+				"dweb:/ipfs/QmUEa2RYoKtsjexQmE53CgSvjZr9Kkg2YozcDGfszXmCNt"
+			]
+		}
+	},
+	"version": 1
+}

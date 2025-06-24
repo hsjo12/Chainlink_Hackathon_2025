@@ -2,6 +2,7 @@
 pragma solidity 0.8.30;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
 import "./SecondaryMarketCore.sol";
 import "../tickets/Ticket.sol";
 
@@ -11,6 +12,7 @@ import "../tickets/Ticket.sol";
  * @dev     Extends SecondaryMarketCore with listing-specific operations
  */
 contract SecondaryMarketListing is SecondaryMarketCore {
+    using Counters for Counters.Counter;
     /**
      * @notice Creates a new NFT listing with event time verification
      * @param nftContract Address of the NFT contract
