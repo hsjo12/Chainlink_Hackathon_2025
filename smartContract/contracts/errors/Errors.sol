@@ -8,6 +8,7 @@ error ExceedsMaxSupply();
 error UnacceptablePayment();
 error InsufficientAmount();
 error TransactionFailed();
+error LaunchpadMismatch();
 error InvalidNonce();
 error SignatureExpired();
 error InvalidSignature();
