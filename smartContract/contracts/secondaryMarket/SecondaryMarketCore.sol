@@ -48,8 +48,8 @@ contract SecondaryMarketCore is
         __Pausable_init();
         
         // Initialize TicketInfoConsumer
-        FunctionsClient.__FunctionsClient_init(_router);
-        ConfirmedOwner.__ConfirmedOwner_init(msg.sender);
+        __FunctionsClient_init(_router);
+        __ConfirmedOwner_init(msg.sender);
         
         feeRecipient = _feeRecipient;
         platformFeePercent = _platformFeePercent;
