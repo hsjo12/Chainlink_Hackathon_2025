@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "./SecondaryMarketCore.sol";
 import "../tickets/Ticket.sol";
 
@@ -51,7 +51,7 @@ contract SecondaryMarketPurchase is SecondaryMarketCore {
         uint256 sellerAmount = listing.price - platformFee;
         
         // Transfer NFT to buyer
-        IERC721Upgradeable(listing.nftContract).safeTransferFrom(
+        IERC721(listing.nftContract).safeTransferFrom(
             listing.seller,
             msg.sender,
             listing.tokenId

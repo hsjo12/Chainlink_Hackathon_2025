@@ -3,7 +3,7 @@ pragma solidity 0.8.30;
 
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
+import "../utils/Counters.sol";
 import "../proxy/UUPSAccessControl.sol";
 import "./SecondaryMarketStorage.sol";
 
