@@ -9,7 +9,7 @@ import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/Messa
 import {Seat} from "../types/Seat.sol";
 import {Tier, TierInfo} from "../types/TierInfo.sol";
 import {MintSignatureParams, MintBatchSignatureParams} from "../types/MintSignature.sol";
-import {LengthMismatch, ExceedsMaxSupply, UnacceptablePayment, InsufficientAmount, TransactionFailed, InvalidNonce, SignatureExpired, InvalidSignature, ZeroAddressNotAllowed} from "../errors/Errors.sol";
+import {LengthMismatch, ExceedsMaxSupply, UnacceptablePayment, InsufficientAmount, SeatAlreadyClaimed, TransactionFailed, LaunchpadMismatch, InvalidNonce, SignatureExpired, InvalidSignature, ZeroAddressNotAllowed} from "../errors/Errors.sol";
 import {ITicket} from "../interfaces/ITicket.sol";
 import {IFeeManager} from "../interfaces/IFeeManager.sol";
 import {IConfig} from "../interfaces/IConfig.sol";
@@ -37,6 +37,9 @@ contract TicketLaunchpad is
 
     mapping(address user => uint256 nonce) public nonces; // Maps user address to their current nonce
     mapping(Tier tier => TierInfo tierInfo) public tierInfo;
+
+    /// @dev Tracks claimed seat numbers to prevent duplication.
+    mapping(string seatNumber => bool used) public claimedSeatNumbers;
 
     mapping(address paymentToken => address priceFeed)
         public paymentTokenPriceFeeds;
@@ -109,7 +112,8 @@ contract TicketLaunchpad is
             tierInfo[tierIds[i]] = TierInfo({
                 priceUSD: info.priceUSD,
                 maxSupply: info.maxSupply,
-                sold: 0
+                sold: 0,
+                hasSeatNumbers: info.hasSeatNumbers
             });
 
             unchecked {
@@ -334,10 +338,17 @@ contract TicketLaunchpad is
      */
     function _mintTicket(MintSignatureParams calldata params) private {
         Tier tier = params.seat.tier;
+        string calldata seatNumber = params.seat.seatNumber;
 
         if (tierInfo[tier].sold + 1 > tierInfo[tier].maxSupply) {
             revert ExceedsMaxSupply();
         }
+
+        if (tierInfo[tier].hasSeatNumbers) {
+            if (claimedSeatNumbers[seatNumber]) revert SeatAlreadyClaimed();
+            claimedSeatNumbers[seatNumber] = true;
+        }
+
         _verify(params);
         ticket.mint(params.to, params.seat);
         tierInfo[tier].sold++;
@@ -350,7 +361,7 @@ contract TicketLaunchpad is
     function _mintTicketBatch(
         MintBatchSignatureParams calldata params
     ) private {
-        _trackSupply(params.seats);
+        _validateSeatAndSupply(params.seats);
         _verify(params);
         ticket.batchMint(params.to, params.seats);
     }
@@ -361,17 +372,27 @@ contract TicketLaunchpad is
      * @param seats Array of seat details.
      */
     function adminMint(address to, Seat[] calldata seats) external onlyOwner {
-        _trackSupply(seats);
+        _validateSeatAndSupply(seats);
         ticket.batchMint(to, seats);
     }
 
-    function _trackSupply(Seat[] calldata seats) private {
+    /**
+     * @notice Validates that requested seats and supply are available before purchase.
+     * @param seats Array of Seat structs, each containing `tier` and `seatNumber`.
+     */
+    function _validateSeatAndSupply(Seat[] calldata seats) private {
         uint256 len = seats.length;
         Tier tier;
+        string calldata seatNumber;
         for (uint256 i = 0; i < len; ) {
             tier = seats[i].tier;
+            seatNumber = seats[i].seatNumber;
             if (tierInfo[tier].sold + 1 > tierInfo[tier].maxSupply) {
                 revert ExceedsMaxSupply();
+            }
+            if (tierInfo[tier].hasSeatNumbers) {
+                if (claimedSeatNumbers[seatNumber]) revert SeatAlreadyClaimed();
+                claimedSeatNumbers[seatNumber] = true;
             }
             tierInfo[tier].sold++;
             unchecked {
@@ -382,6 +403,7 @@ contract TicketLaunchpad is
 
     /**
      * @dev A private function to verify signature validity and nonce.
+     * @param launchpad launchpad address.
      * @param to Recipient address.
      * @param nonce Expected nonce for replay protection.
      * @param deadline Signature expiration timestamp.
@@ -389,12 +411,14 @@ contract TicketLaunchpad is
      * @param sig Signature bytes.
      */
     function _verify(
+        address launchpad,
         address to,
         uint256 nonce,
         uint64 deadline,
         bytes32 dataHash,
         bytes calldata sig
     ) private {
+        if (launchpad != address(this)) revert LaunchpadMismatch();
         if (nonces[to] != nonce) revert InvalidNonce();
         if (block.timestamp > deadline) revert SignatureExpired();
         if (_authorizedSigner != dataHash.toEthSignedMessageHash().recover(sig))
@@ -409,6 +433,7 @@ contract TicketLaunchpad is
      * @param params Single mint parameters.
      */
     function _verify(MintSignatureParams calldata params) private {
+        address launchpad = params.launchpad;
         address to = params.to;
         uint256 nonce = params.nonce;
         uint64 deadline = params.deadline;
@@ -416,6 +441,7 @@ contract TicketLaunchpad is
 
         bytes32 hash = keccak256(
             abi.encode(
+                launchpad,
                 to,
                 seat.section,
                 seat.seatNumber,
@@ -425,7 +451,7 @@ contract TicketLaunchpad is
             )
         );
 
-        _verify(to, nonce, deadline, hash, params.signature);
+        _verify(launchpad, to, nonce, deadline, hash, params.signature);
     }
 
     /**
@@ -433,12 +459,15 @@ contract TicketLaunchpad is
      * @param params Batch mint parameters.
      */
     function _verify(MintBatchSignatureParams calldata params) private {
+        address launchpad = params.launchpad;
         address to = params.to;
         uint256 nonce = params.nonce;
         uint64 deadline = params.deadline;
         Seat[] calldata seats = params.seats;
-        bytes32 hash = keccak256(abi.encode(to, seats, nonce, deadline));
-        _verify(to, nonce, deadline, hash, params.signature);
+        bytes32 hash = keccak256(
+            abi.encode(launchpad, to, seats, nonce, deadline)
+        );
+        _verify(launchpad, to, nonce, deadline, hash, params.signature);
     }
 
     /**
