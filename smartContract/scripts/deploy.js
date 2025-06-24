@@ -22,6 +22,7 @@ const main = async () => {
   const { ticketLaunchpad } = await ignition.deploy(ticketLaunchpadModule);
 
   // Initialize
+
   await config.initialize(
     feeManager.target,
     treasury.target,
