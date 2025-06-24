@@ -1,8 +1,21 @@
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import ConnectWallet from "./ConnectWallet";
+import { useAppKitAccount } from "@reown/appkit/react";
+import { checkOrganizer } from "@/lib/web3/smartContract/organizerRegistry";
 
 export function HeaderMenu() {
+  const { address, isConnected } = useAppKitAccount();
+  const [isOrganizer, setIsOrganizer] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const result = await checkOrganizer(address);
+      setIsOrganizer(result);
+    })();
+  }, [address, isConnected]);
+
   return (
     <div className="mb-12">
       <div className="flex justify-end">
@@ -31,12 +44,22 @@ export function HeaderMenu() {
         >
           Marketplace
         </Link>
-        <Link
-          href="/create-event"
-          className="text-green-600 hover:text-green-800 font-medium"
-        >
-          Create Event
-        </Link>
+
+        {isOrganizer ? (
+          <Link
+            href="/create-event"
+            className="text-green-600 hover:text-green-800 font-medium"
+          >
+            Approve
+          </Link>
+        ) : (
+          <Link
+            href="/create-event"
+            className="text-green-600 hover:text-green-800 font-medium"
+          >
+            Create Event!
+          </Link>
+        )}
       </nav>
     </div>
   );

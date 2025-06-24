@@ -8,41 +8,111 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PlusCircle, MinusCircle, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Select } from "@/components/ui/select";
+import { toastMessage } from "@/lib/react-tostify/popup";
+import { getWriteContract } from "@/lib/web3/provider";
+import OrganizerRegistry from "@/smartContracts/abis/OrganizerRegistry.json";
+import TicketFactory from "@/smartContracts/abis/TicketFactory.json";
+import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
+import { checkConnection } from "@/lib/web3/utils";
+import { BrowserProvider, Contract, ethers } from "ethers";
+import { Interface } from "ethers";
+import { createTicketPair } from "@/lib/web3/smartContract/ticketFactory";
+import { EventDetails, TicketType, TierInfo } from "@/types/types";
+import { buildCreatePairParams } from "@/lib/web3/smartContract/buildCreatePairParams";
+import { ETH_USD_PRICE_FEED } from "@/constants/constants";
+
+// Define Ticket type
+const ticketOptions = ["VIP", "STANDARD", "STANDING"];
 
 // Define cryptocurrency options
 const cryptocurrencies = [
-  { id: "usd", name: "USD" },
-  { id: "eth", name: "Ethereum (ETH)" },
-  { id: "btc", name: "Bitcoin (BTC)" },
-  { id: "sol", name: "Solana (SOL)" },
-  { id: "usdc", name: "USD Coin (USDC)" },
+  {
+    id: "ETH",
+    name: "ETH (Ether)",
+    address: "0x0000000000000000000000000000000000000000",
+    priceFeed: ETH_USD_PRICE_FEED,
+  },
+  {
+    id: "WBTC",
+    name: "WBTC (Wrapped Bitcoin)",
+    address: "0x29f2d40b0605204364af54ec677bd022da425d03",
+    priceFeed: "0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43",
+  },
+  {
+    id: "WETH",
+    name: "WETH (Wrapped Ether)",
+    address: "0xf531B8F309Be94191af87605CfBf600D71C2cFe0",
+    priceFeed: "0x694AA1769357215DE4FAC081bf1f309aDC325306",
+  },
+  {
+    id: "USDC",
+    name: "USDC (USD Coin)",
+    address: "0x94a9d9ac8a22534e3faca9f4e7f2e2cf85d5e4c8",
+    priceFeed: "0xA2F78ab2355fe2f984D808B5CeE7FD0A93D5270E",
+  },
+  {
+    id: "USDT",
+    name: "USDT (Tether)",
+    address: "0xaa8e23fb1079ea71e0a56f48a2aa51851d8433d0",
+    priceFeed: "0xA2F78ab2355fe2f984D808B5CeE7FD0A93D5270E",
+  },
 ];
 
-// Define ticket type interface
-interface TicketType {
-  id: string;
-  name: string;
-  price: string;
-  quantity: string;
-}
-
 export default function CreateEventPage() {
+  const { address, isConnected } = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider("eip155");
+
   const router = useRouter();
+  const ticketIdCounter = useRef(1);
   const [title, setTitle] = useState("");
+  const [symbol, setSymbol] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
-  const [date, setDate] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [dateError, setDateError] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [ticketTypes, setTicketTypes] = useState<TicketType[]>([
-    { id: "regular", name: "Regular", price: "", quantity: "" },
+    { id: "vip", name: "VIP", price: "", quantity: "" },
   ]);
   const [selectedCryptocurrencies, setSelectedCryptocurrencies] = useState<
     string[]
-  >(["usd"]);
+  >(["ETH"]);
   const [tokenLink, setTokenLink] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // set start/end date
+  const handleDateChange = (
+    type: "start" | "end",
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = e.target.value;
+    setDateError("");
+    // set start / end date
+    if (type === "start") {
+      if (endDate && value > endDate) {
+        setDateError("Start Date cannot be later than End Date.");
+        return setStartDate("");
+      } else if (new Date(value).getTime() <= Date.now()) {
+        setDateError("Start Date cannot be earlier than now.");
+        return setStartDate("");
+      }
+      setStartDate(value);
+    } else if (type === "end") {
+      if (startDate && startDate > value) {
+        setDateError("End Date cannot be earlier than Start Date.");
+        return setEndDate("");
+      } else if (new Date(value).getTime() < Date.now()) {
+        setDateError("End Date cannot be earlier than now.");
+        return setEndDate("");
+      }
+      setEndDate(value);
+    }
+  };
 
   // Handle image upload
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,11 +131,22 @@ export default function CreateEventPage() {
 
   // Add a new ticket type
   const addTicketType = () => {
-    const newId = `ticket-${ticketTypes.length + 1}`;
-    setTicketTypes([
-      ...ticketTypes,
-      { id: newId, name: "", price: "", quantity: "" },
-    ]);
+    if (ticketTypes.length === ticketOptions.length) return;
+
+    const unusedTypes = ticketOptions.filter(
+      (type) => !ticketTypes.some((ticket) => ticket.name === type)
+    );
+
+    const newId = `ticket-${ticketIdCounter.current}`;
+
+    const newTicket: TicketType = {
+      id: newId,
+      name: unusedTypes[0],
+      price: "",
+      quantity: "",
+    };
+    setTicketTypes([...ticketTypes, newTicket]);
+    ticketIdCounter.current += 1;
   };
 
   // Remove a ticket type
@@ -88,6 +169,19 @@ export default function CreateEventPage() {
     );
   };
 
+  const updateTicketTypeName = (id: string, value: string) => {
+    const isSelectedType = ticketTypes.find((ticket) => ticket.name === value);
+
+    if (isSelectedType)
+      return toastMessage(`${value} is already selected`, "warn");
+
+    setTicketTypes(
+      ticketTypes.map((ticket) =>
+        ticket.id === id ? { ...ticket, name: value } : ticket
+      )
+    );
+  };
+
   // Toggle cryptocurrency selection
   const toggleCryptocurrency = (cryptoId: string) => {
     if (selectedCryptocurrencies.includes(cryptoId)) {
@@ -105,6 +199,9 @@ export default function CreateEventPage() {
     setIsSubmitting(true);
 
     try {
+      // Check if a wallet is connected
+      checkConnection(isConnected);
+
       // In a real application, you would upload the image to a server
       // and save the event data to a database or blockchain
 
@@ -115,7 +212,8 @@ export default function CreateEventPage() {
       const newEvent = {
         id: Date.now(), // Generate a unique ID
         title,
-        date,
+        startDate,
+        endDate,
         location,
         summary: description,
         image: imagePreview, // In a real app, this would be a URL to the uploaded image
@@ -128,15 +226,45 @@ export default function CreateEventPage() {
         tokenLink: tokenLink || null,
       };
 
+      // Generate params for the createTicketPair function
+      const params = buildCreatePairParams(
+        title,
+        symbol,
+        imagePreview,
+        description,
+        location,
+        startDate,
+        endDate,
+        null, // image uris by tier
+        ticketTypes,
+        selectedCryptocurrencies,
+        cryptocurrencies
+      );
+
+      // Interact with the createTicketPair function
+      const result = await createTicketPair(walletProvider, params);
+      if (!result) throw new Error("Transaction failed");
+
+      // Return addresses and should store these into DB.
+      const { ticket, ticketLaunchpad, market } = result;
+      console.log(`ticket address : ${ticket}`);
+      console.log(`ticketLaunchpad address : ${ticketLaunchpad}`);
+      console.log(`market address : ${market} - mock market address`);
+
       // In a real application, you would save this to a database or blockchain
       console.log("New event created:", newEvent);
 
-      // // For demo purposes, we'll store it in localStorage to display on the home page
-      // const existingEvents = JSON.parse(localStorage.getItem('events') || '[]');
-      // localStorage.setItem('events', JSON.stringify([...existingEvents, newEvent]));
+      // For demo purposes, we'll store it in localStorage to display on the home page
+      const existingEvents = JSON.parse(localStorage.getItem("events") || "[]");
+      localStorage.setItem(
+        "events",
+        JSON.stringify([...existingEvents, newEvent])
+      );
 
-      // // Navigate to the home page
-      // router.push('/');
+      // Interact with Smart contract
+
+      // Navigate to the home page
+      // router.push("/");
     } catch (error) {
       console.error("Error creating event:", error);
     } finally {
@@ -154,18 +282,30 @@ export default function CreateEventPage() {
         <form onSubmit={handleSubmit}>
           <Card className="mb-6">
             <CardContent className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Event Details</h2>
-
               <div className="space-y-4">
-                <div>
-                  <Label htmlFor="title">Event Title</Label>
-                  <Input
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Enter event title"
-                    required
-                  />
+                <h2 className="text-xl font-semibold mb-4">Event Details</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2">
+                  <div>
+                    <Label htmlFor="title">Event Title</Label>
+                    <Input
+                      id="title"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="Enter event title"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="symbol">Ticket Symbol</Label>
+                    <Input
+                      id="symbol"
+                      value={symbol}
+                      onChange={(e) => setSymbol(e.target.value)}
+                      placeholder="Enter event ticket symbol"
+                      required
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -192,15 +332,34 @@ export default function CreateEventPage() {
                     />
                   </div>
 
-                  <div>
-                    <Label htmlFor="date">Date</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      required
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="startDate">Start Date</Label>
+                      <Input
+                        id="startDate"
+                        type="datetime-local"
+                        value={startDate}
+                        onChange={(e) => handleDateChange("start", e)}
+                        onFocus={(e) => e.target.showPicker?.()}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="endDate">End Date</Label>
+                      <Input
+                        id="endDate"
+                        type="datetime-local"
+                        value={endDate}
+                        onChange={(e) => handleDateChange("end", e)}
+                        onFocus={(e) => e.target.showPicker?.()}
+                        required
+                      />
+                    </div>
+                    {dateError && (
+                      <p className="col-span-2 text-red-500 text-sm mt-1 ">
+                        {dateError}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -276,15 +435,21 @@ export default function CreateEventPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <Label htmlFor={`${ticket.id}-name`}>Name</Label>
-                        <Input
+                        <Select
                           id={`${ticket.id}-name`}
                           value={ticket.name}
                           onChange={(e) =>
-                            updateTicketType(ticket.id, "name", e.target.value)
+                            updateTicketTypeName(ticket.id, e.target.value)
                           }
-                          placeholder="e.g., Regular, VIP"
                           required
-                        />
+                          className="w-full border border-input rounded-md p-2 text-sm"
+                        >
+                          {ticketOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </Select>
                       </div>
 
                       <div>
@@ -346,6 +511,7 @@ export default function CreateEventPage() {
                           type="checkbox"
                           id={`crypto-${crypto.id}`}
                           checked={selectedCryptocurrencies.includes(crypto.id)}
+                          disabled={crypto.id === "ETH"}
                           onChange={() => toggleCryptocurrency(crypto.id)}
                           className="mr-2"
                         />

@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -18,6 +19,8 @@ import {
 import { HandWrittenTitle } from "../ui/hand-writing-text";
 import { MorphingText } from "../ui/liquid-text";
 import ConnectWallet from "@/app/components/ConnectWallet";
+import { checkOrganizer } from "@/lib/web3/smartContract/organizerRegistry";
+import { useAppKitAccount } from "@reown/appkit/react";
 
 const transitionVariants = {
   item: {
@@ -81,6 +84,7 @@ export function HeroSection() {
       }
     }
   }, []);
+
   const texts = [
     "Explore Events",
     "Discover More",
@@ -405,6 +409,15 @@ const menuItems = [
 ];
 
 const HeroHeader = () => {
+  const { address, isConnected } = useAppKitAccount();
+  const [isOrganizer, setIsOrganizer] = useState(false);
+  useEffect(() => {
+    (async () => {
+      const result = await checkOrganizer(address);
+      setIsOrganizer(result);
+    })();
+  }, [address, isConnected]);
+
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
 
@@ -450,23 +463,22 @@ const HeroHeader = () => {
 
             <div className="absolute inset-0 m-auto hidden size-fit lg:block">
               <ul className="flex gap-8 text-sm">
-                {menuItems.map((item, index) => (
-                  <li key={index}>
-                    <Link
-                      href={item.href}
-                      className="text-muted-foreground hover:text-accent-foreground block duration-150"
-                    >
-                      <span>{item.name}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
+                {menuItems.map((item, index) => {
+                  if (item.name === "Create Event" && !isOrganizer) {
+                    return (
+                      <li key={index}>
+                        <Link
+                          href="https://docs.google.com/forms/d/e/1FAIpQLSfRjkF8eUU7XqYd-B81oxtb3kVXSJhKihdmzGZ1k5at21swDg/viewform?usp=sharing&ouid=116351869150649390284"
+                          className="text-muted-foreground hover:text-accent-foreground block duration-150"
+                          target="_blank"
+                        >
+                          <span>Become Organizer</span>
+                        </Link>
+                      </li>
+                    );
+                  }
 
-            <div className="bg-background group-data-[state=active]:block lg:group-data-[state=active]:flex mb-6 hidden w-full flex-wrap items-center justify-end space-y-8 rounded-3xl border p-6 shadow-2xl shadow-zinc-300/20 md:flex-nowrap lg:m-0 lg:flex lg:w-fit lg:gap-6 lg:space-y-0 lg:border-transparent lg:bg-transparent lg:p-0 lg:shadow-none dark:shadow-none dark:lg:bg-transparent">
-              <div className="lg:hidden">
-                <ul className="space-y-6 text-base">
-                  {menuItems.map((item, index) => (
+                  return (
                     <li key={index}>
                       <Link
                         href={item.href}
@@ -475,7 +487,40 @@ const HeroHeader = () => {
                         <span>{item.name}</span>
                       </Link>
                     </li>
-                  ))}
+                  );
+                })}
+              </ul>
+            </div>
+
+            <div className="bg-background group-data-[state=active]:block lg:group-data-[state=active]:flex mb-6 hidden w-full flex-wrap items-center justify-end space-y-8 rounded-3xl border p-6 shadow-2xl shadow-zinc-300/20 md:flex-nowrap lg:m-0 lg:flex lg:w-fit lg:gap-6 lg:space-y-0 lg:border-transparent lg:bg-transparent lg:p-0 lg:shadow-none dark:shadow-none dark:lg:bg-transparent">
+              <div className="lg:hidden">
+                <ul className="space-y-6 text-base">
+                  {menuItems.map((item, index) => {
+                    if (item.name === "Create Event" && !isOrganizer) {
+                      return (
+                        <li key={index}>
+                          <Link
+                            href="https://docs.google.com/forms/d/e/1FAIpQLSfRjkF8eUU7XqYd-B81oxtb3kVXSJhKihdmzGZ1k5at21swDg/viewform?usp=sharing&ouid=116351869150649390284"
+                            className="text-muted-foreground hover:text-accent-foreground block duration-150"
+                            target="_blank"
+                          >
+                            <span>Become Organizer</span>
+                          </Link>
+                        </li>
+                      );
+                    }
+
+                    return (
+                      <li key={index}>
+                        <Link
+                          href={item.href}
+                          className="text-muted-foreground hover:text-accent-foreground block duration-150"
+                        >
+                          <span>{item.name}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
               <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
