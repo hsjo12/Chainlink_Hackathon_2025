@@ -182,9 +182,9 @@ contract SecondaryMarket is
         __ReentrancyGuard_init();
         __Pausable_init();
         
-        // Initialize TicketInfoConsumer
-        FunctionsClient.__FunctionsClient_init(_router);
-        ConfirmedOwner.__ConfirmedOwner_init(msg.sender);
+        // 使用您自定义的初始化方法
+        __FunctionsClient_init(_router);
+        __ConfirmedOwner_init(msg.sender);
         
         feeRecipient = _feeRecipient;
         platformFeePercent = _platformFeePercent;

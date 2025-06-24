@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
-import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
-
+import "../chainlink/FunctionsClientUpgradeable.sol";
+import "../chainlink/ConfirmedOwnerUpgradeable.sol";
 /**
  * @title TicketInfoConsumer
  * @notice This contract uses Chainlink Functions to fetch the remaining ticket count and verify ticket usage status from an off-chain API.
  * @dev Designed to run on the Sepolia testnet. Requires a Chainlink Functions subscription and valid DON configuration.
  */
-contract TicketInfoConsumer is FunctionsClient, ConfirmedOwner {
+contract TicketInfoConsumer is ConfirmedOwnerUpgradeable,FunctionsClientUpgradeable {
     using FunctionsRequest for FunctionsRequest.Request;
 
     bytes32 public s_lastRequestId;
@@ -98,7 +97,6 @@ contract TicketInfoConsumer is FunctionsClient, ConfirmedOwner {
     /**
      * @notice Constructor sets up Chainlink Functions client and ownership
      */
-    constructor() FunctionsClient(ROUTER) ConfirmedOwner(msg.sender) {}
 
     /**
      * @notice Sends a Chainlink Functions request to fetch remaining ticket count

@@ -9,7 +9,7 @@ module.exports = {
       viaIR: true,
       optimizer: {
         enabled: true,
-        runs: 10_000_000,
+        runs: 200,
         details: {
           yulDetails: {
             optimizerSteps: "u",
