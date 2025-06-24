@@ -6,6 +6,7 @@ import {Seat} from "./Seat.sol";
  * @dev Parameters required for minting a single ticket with an off-chain signature.
  */
 struct MintSignatureParams {
+    address launchpad; // launchpad address
     address to; // Recipient address of the minted ticket
     Seat seat; // Seat details to be minted
     uint256 nonce; // Unique nonce to prevent replay attacks
@@ -17,6 +18,7 @@ struct MintSignatureParams {
  * @dev Parameters required for minting multiple tickets in a batch with a single off-chain signature.
  */
 struct MintBatchSignatureParams {
+    address launchpad; // launchpad address
     address to; // Recipient address of the minted tickets
     Seat[] seats; // Array of seat details to be minted
     uint256 nonce; // Unique nonce to prevent replay attacks

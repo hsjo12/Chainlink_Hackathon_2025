@@ -16,4 +16,5 @@ struct TierInfo {
     uint256 priceUSD; // Price in USD
     uint256 maxSupply; // Maximum number of tickets for this tier
     uint256 sold; // Number of tickets sold so far
+    bool hasSeatNumbers; // If true, each ticket must have a seat number
 }
