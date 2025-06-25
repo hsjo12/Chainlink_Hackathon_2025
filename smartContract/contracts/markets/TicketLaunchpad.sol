@@ -9,7 +9,7 @@ import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/Messa
 import {Seat} from "../types/Seat.sol";
 import {Tier, TierInfo} from "../types/TierInfo.sol";
 import {MintSignatureParams, MintBatchSignatureParams} from "../types/MintSignature.sol";
-import {LengthMismatch, ExceedsMaxSupply, UnacceptablePayment, InsufficientAmount, SeatAlreadyClaimed, TransactionFailed, LaunchpadMismatch, InvalidNonce, SignatureExpired, InvalidSignature, ZeroAddressNotAllowed} from "../errors/Errors.sol";
+import {LengthMismatch, ExceedsMaxSupply, UnacceptablePayment, InsufficientAmount, SeatAlreadyClaimed, TransactionFailed, NewMaxSupplyTooLow, LaunchpadMismatch, InvalidNonce, SignatureExpired, InvalidSignature, ZeroAddressNotAllowed} from "../errors/Errors.sol";
 import {ITicket} from "../interfaces/ITicket.sol";
 import {IFeeManager} from "../interfaces/IFeeManager.sol";
 import {IConfig} from "../interfaces/IConfig.sol";
@@ -203,6 +203,32 @@ contract TicketLaunchpad is
         address[] calldata priceFeeds
     ) external onlyOwner {
         _updatePaymentTokens(paymentTokens, priceFeeds);
+    }
+
+    /**
+     * @notice Batch update tier information (max supply or price in USD) based on the specified field.
+     * @param tierIds Array of tier enums to update.
+     * @param maxSupplies Corresponding new supplies.
+     * @param tierPricesUSD Corresponding new prices in USD (decimals 8).
+     */
+    function setTierMaxSupplyPrices(
+        Tier[] memory tierIds,
+        uint256[] calldata maxSupplies,
+        uint256[] calldata tierPricesUSD
+    ) external onlyOwner {
+        uint256 length = tierIds.length;
+        if (length != maxSupplies.length || length != tierPricesUSD.length)
+            revert LengthMismatch();
+
+        for (uint256 i; i < length; ) {
+            if (tierInfo[tierIds[i]].sold > maxSupplies[i])
+                revert NewMaxSupplyTooLow();
+            tierInfo[tierIds[i]].maxSupply = maxSupplies[i];
+            tierInfo[tierIds[i]].priceUSD = tierPricesUSD[i];
+            unchecked {
+                i++;
+            }
+        }
     }
 
     /**
