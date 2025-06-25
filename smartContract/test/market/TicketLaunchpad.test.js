@@ -220,6 +220,22 @@ describe("Ticket Test", () => {
         );
       });
 
+      it("should allow only the owner to set ticket price and max supply per tier", async () => {
+        const MAX_SUPPLY = 10;
+        const USD_PRICE = ethers.parseUnits("300", 8);
+        await ticketLaunchpad.setTierMaxSupplyPrices(
+          [STANDARD],
+          [MAX_SUPPLY],
+          [USD_PRICE]
+        );
+        expect((await ticketLaunchpad.tierInfo(STANDARD)).priceUSD).to.eq(
+          USD_PRICE
+        );
+        expect((await ticketLaunchpad.tierInfo(STANDARD)).maxSupply).to.eq(
+          MAX_SUPPLY
+        );
+      });
+
       it("should allow only the owner to set payment tokens and price feeds", async () => {
         const FAKE_TOKEN = ethers.ZeroAddress;
         const FAKE_PRICE_FEED = ethers.ZeroAddress;
