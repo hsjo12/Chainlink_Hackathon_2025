@@ -11,9 +11,10 @@ export type EventDetails = [
 export type TierIds = number[];
 
 export type TierInfo = [
-  number, // Ticket Price in USD
+  bigint, // Ticket Price in USD, add 8 decimals ex) ethers.parseUnits("200", 8)
   number, // Maximum number of tickets for this tier
-  number //  Number of tickets sold so far
+  number, //  Number of tickets sold so far
+  boolean
 ];
 
 export type TicketType = {
@@ -22,3 +23,17 @@ export type TicketType = {
   price: string;
   quantity: string;
 };
+
+export type PaymentTokenOption = {
+  id: string;
+  name: string;
+  address: string;
+  priceFeed: string;
+  decimals: number;
+};
+
+export type Seat = [
+  section: string, // Section or area of the venue (e.g., "A", "B", "Balcony", "Left Wing")
+  seatNumber: string, // Specific seat identifier within the section (e.g., "A1", "B12", "R5")
+  tier: number // 0 : VIP , 1 : STANDARD, 2 : STANDING
+];

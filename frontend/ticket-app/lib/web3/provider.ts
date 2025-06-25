@@ -15,7 +15,7 @@ export const getProvider = () => {
 
 export const getReadOnlyContract = (target: string, abi: InterfaceAbi) => {
   const rpc = process.env.NEXT_PUBLIC_RPC;
-  console.log(rpc);
+
   const provider = new ethers.JsonRpcProvider(rpc);
   return new ethers.Contract(target, abi, provider);
 };

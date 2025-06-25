@@ -5,6 +5,7 @@ import {
   VIP,
 } from "@/constants/constants";
 import { EventDetails, TicketType, TierInfo } from "@/types/types";
+import { ethers } from "ethers";
 
 export function buildEventDetails(
   title: string,
@@ -26,7 +27,7 @@ export function buildEventDetails(
   ];
 }
 
-export function buildTierIds(ticketTypes: TicketType[]): number[] {
+function buildTierIds(ticketTypes: TicketType[]): number[] {
   return ticketTypes.map((v) => {
     const name = v.name.toLowerCase();
     if (name === "vip") return VIP;
@@ -49,9 +50,10 @@ export function buildImageURIs(
 
 export function buildTierInfoList(ticketTypes: TicketType[]): TierInfo[] {
   return ticketTypes.map((ticket) => [
-    parseFloat(ticket.price),
+    ethers.parseUnits(String(parseInt(ticket.price)), 8),
     parseInt(ticket.quantity),
     0,
+    false, // currently no seat number option, so false
   ]);
 }
 
