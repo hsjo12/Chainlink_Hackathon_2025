@@ -15,3 +15,4 @@ error InvalidSignature();
 error ZeroAddressNotAllowed();
 error OnlyTicketLaunchpad();
 error SeatAlreadyClaimed();
+error NewMaxSupplyTooLow();
