@@ -124,4 +124,9 @@ contract SecondaryMarketAdmin is SecondaryMarketCore {
         ticketStatus[ticketId] = status;
         emit TicketStatusUpdated(ticketId, status);
     }
+    
+    // Add a test helper method
+    function setRequestToListing(bytes32 requestId, uint256 listingId) external onlyRole(MANAGER) {
+        requestToListing[requestId] = listingId;
+    }
 }

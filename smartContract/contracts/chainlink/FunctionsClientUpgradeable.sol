@@ -5,8 +5,8 @@ import {IFunctionsRouter} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/i
 import {IFunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/interfaces/IFunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 
-/// @title 可升级的Chainlink Functions客户端合约
-/// @notice 合约开发者可以继承这个合约以便发送Chainlink Functions请求
+/// @title Upgradeable Chainlink Functions Client Contract
+/// @notice Contract developers can inherit this contract to send Chainlink Functions requests
 abstract contract FunctionsClientUpgradeable is IFunctionsClient {
   using FunctionsRequest for FunctionsRequest.Request;
 
@@ -17,17 +17,17 @@ abstract contract FunctionsClientUpgradeable is IFunctionsClient {
 
   error OnlyRouterCanFulfill();
 
-  /// @notice 初始化函数，替代构造函数
-  /// @param router Chainlink Functions路由器地址
+  /// @notice Initialization function, replaces constructor
+  /// @param router Chainlink Functions router address
   function __FunctionsClient_init(address router) internal {
     i_router = IFunctionsRouter(router);
   }
 
-  /// @notice 发送Chainlink Functions请求
-  /// @param data Functions请求的CBOR编码字节数据
-  /// @param subscriptionId 将被收费以服务请求的订阅ID
-  /// @param callbackGasLimit 回调函数可用的gas限制
-  /// @return requestId 为此请求生成的请求ID
+  /// @notice Send Chainlink Functions request
+  /// @param data CBOR encoded bytes data for Functions request
+  /// @param subscriptionId Subscription ID that will be charged to service the request
+  /// @param callbackGasLimit Gas limit for the callback function
+  /// @return requestId Request ID generated for this request
   function _sendRequest(
     bytes memory data,
     uint64 subscriptionId,
@@ -45,11 +45,11 @@ abstract contract FunctionsClientUpgradeable is IFunctionsClient {
     return requestId;
   }
 
-  /// @notice 用户定义的函数，用于处理来自DON的响应
-  /// @param requestId 请求ID，由sendRequest()返回
-  /// @param response 用户源代码执行的聚合响应
-  /// @param err 用户代码执行或执行管道的聚合错误
-  /// @dev response或err参数将被设置，但永远不会同时设置
+  /// @notice User-defined function to handle responses from DON
+  /// @param requestId Request ID returned by sendRequest()
+  /// @param response Aggregated response from user source code execution
+  /// @param err Aggregated error from user code execution or execution pipeline
+  /// @dev response or err parameter will be set, but never both
   function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal virtual;
 
   /// @inheritdoc IFunctionsClient

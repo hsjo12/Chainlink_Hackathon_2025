@@ -3,8 +3,8 @@ pragma solidity 0.8.30;
 
 import {IOwnable} from "@chainlink/contracts/src/v0.8/shared/interfaces/IOwnable.sol";
 
-/// @title 可升级的ConfirmedOwner合约
-/// @notice 一个带有基本合约所有权辅助函数的合约
+/// @title Upgradeable ConfirmedOwner Contract
+/// @notice A contract with basic contract ownership helper functions
 contract ConfirmedOwnerUpgradeable is IOwnable {
   address private s_owner;
   address private s_pendingOwner;
@@ -12,19 +12,19 @@ contract ConfirmedOwnerUpgradeable is IOwnable {
   event OwnershipTransferRequested(address indexed from, address indexed to);
   event OwnershipTransferred(address indexed from, address indexed to);
 
-  /// @notice 初始化函数，替代构造函数
-  /// @param newOwner 新的所有者地址
+  /// @notice Initialization function, replaces constructor
+  /// @param newOwner Address of the new owner
   function __ConfirmedOwner_init(address newOwner) internal {
     require(newOwner != address(0), "Cannot set owner to zero");
     s_owner = newOwner;
   }
 
-  /// @notice 允许所有者开始将所有权转移到新地址
+  /// @notice Allows owner to begin transferring ownership to a new address
   function transferOwnership(address to) public override onlyOwner {
     _transferOwnership(to);
   }
 
-  /// @notice 允许接收者完成所有权转移
+  /// @notice Allows recipient to complete ownership transfer
   function acceptOwnership() external override {
     require(msg.sender == s_pendingOwner, "Must be proposed owner");
 
@@ -35,12 +35,12 @@ contract ConfirmedOwnerUpgradeable is IOwnable {
     emit OwnershipTransferred(oldOwner, msg.sender);
   }
 
-  /// @notice 获取当前所有者
+  /// @notice Get the current owner
   function owner() public view override returns (address) {
     return s_owner;
   }
 
-  /// @notice 验证、转移所有权并发出相关事件
+  /// @notice Validate, transfer ownership and emit related events
   function _transferOwnership(address to) private {
     require(to != msg.sender, "Cannot transfer to self");
 
@@ -49,12 +49,12 @@ contract ConfirmedOwnerUpgradeable is IOwnable {
     emit OwnershipTransferRequested(s_owner, to);
   }
 
-  /// @notice 验证访问权限
+  /// @notice Validate access permission
   function _validateOwnership() internal view {
     require(msg.sender == s_owner, "Only callable by owner");
   }
 
-  /// @notice 如果不是合约所有者调用则回退
+  /// @notice Reverts if not called by contract owner
   modifier onlyOwner() {
     _validateOwnership();
     _;

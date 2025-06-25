@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
+import {IFunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/interfaces/IFunctionsClient.sol";
+
 /**
  * @title MockFunctionsRouter
  * @notice Mock contract for testing Chainlink Functions integration
  */
 contract MockFunctionsRouter {
     event RequestSent(bytes32 indexed requestId, address indexed sender);
+    event RequestFulfilled(bytes32 indexed requestId, address indexed client);
 
     constructor() {}
 
@@ -22,6 +25,17 @@ contract MockFunctionsRouter {
         );
         emit RequestSent(requestId, msg.sender);
         return requestId;
+    }
+
+    function fulfillRequest(
+        bytes32 requestId,
+        address client,
+        bytes memory response,
+        bytes memory err
+    ) external returns (bool) {
+        IFunctionsClient(client).handleOracleFulfillment(requestId, response, err);
+        emit RequestFulfilled(requestId, client);
+        return true;
     }
 
     // Add required interface functions that FunctionsClient expects
