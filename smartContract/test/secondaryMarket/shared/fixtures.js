@@ -2,14 +2,14 @@ const { ethers } = require("hardhat");
 const { deployProxy, deployContract } = require("../../shared/utilities");
 const { getSampleEventStructSet } = require("../../shared/utilities");
 const { FEE_RATE } = require("../../shared/constants");
+const { PLATFORM_FEE_PERCENT } = require("./constants");
 
 // Add getSampleSeat function definition
 function getSampleSeat() {
   return {
-    tier: 0, // VIP ticket
-    row: 1,
-    seat: 1,
-    metadata: ""
+    section: "A",
+    seatNumber: "A-1",
+    tier: 0 // VIP ticket
   };
 }
 
@@ -54,9 +54,10 @@ async function setupSecondaryMarketContracts() {
   const maxListingDuration = 604800; // 1 week
   const subscriptionId = 123;
   
+  
   await secondaryMarket.initialize(
-    treasury.target, // Fee recipient address
-    platformFeePercent,
+    treasury.target,
+    PLATFORM_FEE_PERCENT, 
     minListingDuration,
     maxListingDuration,
     mockRouter.target,
@@ -85,6 +86,7 @@ async function setupSecondaryMarketContracts() {
   const ticketContract = await ethers.getContractAt("Ticket", ticketAddress);
   
   // Mint a ticket for seller
+  // 修改这一行
   const sampleSeat = getSampleSeat();
   await ticketLaunchpad.adminMint(seller.address, [sampleSeat]);
   

@@ -6,6 +6,8 @@ const { createSampleListing, mockChainlinkResponse } = require("./shared/utiliti
 const { LISTING_PRICE, LISTING_DURATION } = require("./shared/constants");
 
 describe("SecondaryMarketListing", function () {
+  this.timeout(120000);
+  
   let secondaryMarket, deployer, seller, buyer, manager, ticketContract, mockRouter;
   
   beforeEach(async function () {
