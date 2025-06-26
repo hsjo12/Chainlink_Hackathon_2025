@@ -401,10 +401,11 @@ export function HeroSection() {
 const menuItems = [
   { name: "Home", href: "/" },
   { name: "Marketplace", href: "/marketplace" },
+  { name: "Dashboard", href: "/dashbaord" },
   { name: "Create Event", href: "/create-event" },
 ];
 
-const HeroHeader = () => {
+export const HeroHeader = () => {
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
 
