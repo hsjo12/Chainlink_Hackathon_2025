@@ -51,6 +51,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --animate-spotlight: spotlight 2s ease 0.75s 1 forwards;
   --animate-rainbow: rainbow var(--speed, 2s) infinite linear;
   --color-color-5: var(--color-5);
   --color-color-4: var(--color-4);
@@ -73,6 +74,16 @@
     transform: translate(calc(100cqw - 100%), 0);
     }
   }
+  @keyframes spotlight {
+    0% {
+      opacity: 0;
+      transform: translate(-72%, -62%) scale(0.5);
+    }
+    100% {
+      opacity: 1;
+      transform: translate(-50%, -40%) scale(1);
+    }
+  }  
   @keyframes spin-around {
   0% {
     transform: translateZ(0) rotate(0);
