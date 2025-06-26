@@ -90,7 +90,7 @@ export async function GET(
 ) {
   try {
     const event = await prisma.event.findUnique({
-      where: { id: params.id },
+      where: { id: params?.id },
       include: {
         ticketTypes: true,
       },

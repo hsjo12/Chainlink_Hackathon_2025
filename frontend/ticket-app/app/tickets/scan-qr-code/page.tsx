@@ -12,66 +12,18 @@ import {
   Ticket,
   AlertCircle,
 } from 'lucide-react'
-
-// Define the shape of the API response for ticket validation (GET)
-interface TicketValidationGetResponse {
-  ticketValidation: {
-    id: string
-    contractAddress: string
-    tokenId: string
-    eventId: string
-    ticketTypeId: string
-    isUsed: boolean
-    usedAt: string | null
-    validatedBy: string | null
-    createdAt: string
-    updatedAt: string
-  }
-}
-
-// Define the shape for the PUT request body based on your schema
-interface UpdateTicketValidationPayload {
-  isUsed: boolean
-  usedAt?: string
-  validatedBy?: string
-}
-
-// Extend your ValidationResult interface to include more detailed ticket info
-interface ValidationResult {
-  success: boolean
-  message: string
-  data?: {
-    ticket: {
-      id: string
-      tokenId: string
-      status: string // e.g., "valid", "used", "invalid", "marked_used"
-      usedAt: string | null // Can be null if not used
-      usedBy: string | null // Can be null if not used
-      event: {
-        title: string
-        location: string
-        startDate: string
-      }
-      owner: {
-        username: string
-        firstName?: string
-        lastName?: string
-      }
-      ticketType: {
-        name: string
-      }
-    }
-  }
-}
+import {
+  EventResponse,
+  ITicketValidationGetResponse,
+  IUpdateTicketValidationPayload,
+  IValidationResult,
+} from '@/lib/types'
 
 export default function ScanQrCode() {
   const [isScanning, setIsScanning] = useState(false)
   const [validationResult, setValidationResult] =
-    useState<ValidationResult | null>(null)
-  const [staffInfo, setStaffInfo] = useState({
-    id: 'STAFF123',
-    name: 'John Doe',
-  })
+    useState<IValidationResult | null>(null)
+
   const [isLoading, setIsLoading] = useState(false)
   const scannerRef = useRef<Html5QrcodeScanner | null>(null)
   const qrcodeRegionId = 'html5qr-code-full-region'
@@ -135,21 +87,40 @@ export default function ScanQrCode() {
         return
       }
 
-      const getResult: TicketValidationGetResponse = await getResponse.json()
+      const getResult: ITicketValidationGetResponse = await getResponse.json()
       const ticketValidation = getResult.ticketValidation
 
-      // Simulate getting event/owner/ticketType info (you'll need real data here)
-      // This is still placeholder data. In a real app, this should come from
-      // your backend either as part of the initial GET response or a separate API.
-      const mockTicketDetails = {
-        event: {
-          title: 'Summer Music Fest',
-          location: 'Open Air Arena',
-          startDate: '2025-08-10T18:00:00Z',
-        },
-        owner: { username: 'johndoe123', firstName: 'John', lastName: 'Doe' },
-        ticketType: { name: 'VIP Pass' },
+      const eventApiUrl = `/api/events/${ticketValidation.eventId}` // Assuming this API exists
+      console.log('Attempting GET /api/events to:', eventApiUrl)
+      const eventResponse = await fetch(eventApiUrl)
+
+      let eventDetails: EventResponse | null = null
+      if (eventResponse.ok) {
+        eventDetails = await eventResponse.json()
+        console.log('Fetched Event Details:', eventDetails)
+      } else {
+        const eventErrorData = await eventResponse
+          .json()
+          .catch(() => ({ message: 'Unknown error (Event response not JSON)' }))
+        console.error(
+          'GET /api/events Error:',
+          eventResponse.status,
+          eventErrorData
+        )
+        setValidationResult({
+          success: false,
+          message: `API Error: Could not fetch event details (${
+            eventResponse.status
+          } - ${eventErrorData.message || 'Unknown error'}).`,
+        })
+        setIsScanning(false)
+        return
       }
+
+      // Find the specific ticket type from the event details
+      const foundTicketType = eventDetails?.ticketTypes.find(
+        (type) => type.id === ticketValidation.ticketTypeId
+      )
 
       if (ticketValidation.isUsed) {
         // Ticket is already used
@@ -162,10 +133,16 @@ export default function ScanQrCode() {
               tokenId: ticketValidation.tokenId,
               status: 'used',
               usedAt: ticketValidation.usedAt,
-              usedBy: ticketValidation.validatedBy,
-              event: mockTicketDetails.event, // Use mock data for display
-              owner: mockTicketDetails.owner, // Use mock data for display
-              ticketType: mockTicketDetails.ticketType, // Use mock data for display
+              validatedBy: ticketValidation?.validatedBy,
+              event: {
+                title: eventDetails?.title || 'Unknown Event',
+                location: eventDetails?.location || 'Unknown Location',
+                startDate: eventDetails?.startDate || 'Unknown Date',
+              }, // Use mock data for display
+              ticketType: {
+                name: foundTicketType?.name || 'Unknown Type',
+                description: foundTicketType?.description || 'No description',
+              },
             },
           },
         })
@@ -173,7 +150,7 @@ export default function ScanQrCode() {
       } else {
         // Ticket is valid and not used, proceed to mark it as used
         const now = new Date().toISOString()
-        const updatePayload: UpdateTicketValidationPayload = {
+        const updatePayload: IUpdateTicketValidationPayload = {
           isUsed: true,
         }
 
@@ -211,10 +188,16 @@ export default function ScanQrCode() {
               tokenId: ticketValidation.tokenId,
               status: 'marked_used', // Custom status for clarity
               usedAt: now,
-              usedBy: staffInfo.name || staffInfo.id, // Display staff name if available, else ID
-              event: mockTicketDetails.event, // Use mock data for display
-              owner: mockTicketDetails.owner, // Use mock data for display
-              ticketType: mockTicketDetails.ticketType, // Use mock data for display
+              validatedBy: ticketValidation?.validatedBy, // Display staff name if available, else ID
+              event: {
+                title: eventDetails?.title || 'Unknown Event',
+                location: eventDetails?.location || 'Unknown Location',
+                startDate: eventDetails?.startDate || 'Unknown Date',
+              }, // Use mock data for display
+              ticketType: {
+                name: foundTicketType?.name || 'Unknown Type',
+                description: foundTicketType?.description || 'No description',
+              },
             },
           },
         })
@@ -324,12 +307,6 @@ export default function ScanQrCode() {
     }
   }
 
-  // Optional: Function to save staff info if you uncomment the input fields
-  // const saveStaffInfo = () => {
-  //   // Implement saving staffInfo to localStorage or a global state if desired
-  //   console.log('Staff Info Saved:', staffInfo);
-  // };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-2xl mx-auto">
@@ -345,46 +322,6 @@ export default function ScanQrCode() {
               Scan QR codes to validate event tickets
             </p>
           </div>
-
-          {/* Staff Information (Uncomment and implement saveStaffInfo if needed) */}
-          {/* <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-              <User className="w-5 h-5 mr-2" />
-              Staff Information
-            </h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Staff ID
-                </label>
-                <input
-                  type="text"
-                  value={staffInfo.id}
-                  onChange={(e) =>
-                    setStaffInfo({ ...staffInfo, id: e.target.value })
-                  }
-                  // onBlur={saveStaffInfo} // Uncomment if you have this function
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter your staff ID"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  value={staffInfo.name}
-                  onChange={(e) =>
-                    setStaffInfo({ ...staffInfo, name: e.target.value })
-                  }
-                  // onBlur={saveStaffInfo} // Uncomment if you have this function
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter your full name"
-                />
-              </div>
-            </div>
-          </div> */}
 
           {/* Scanner Section */}
           <div className="text-center mb-6">
@@ -480,17 +417,21 @@ export default function ScanQrCode() {
                       {validationResult.data.ticket.event.location}
                     </span>
                   </div>
-
+                  {/* Display Ticket Type */}
                   <div className="flex items-center">
-                    <User className="w-4 h-4 text-gray-500 mr-2" />
-                    <span className="text-sm text-gray-600">
-                      Ticket Holder:
+                    <Ticket className="w-4 h-4 text-gray-500 mr-2" />
+                    <span className="text-sm text-gray-600">Ticket Type:</span>
+                    <span className="ml-2 font-medium">
+                      {validationResult.data.ticket.ticketType.name}
                     </span>
-                    <span className="ml-2">
-                      {validationResult.data.ticket.owner.firstName &&
-                      validationResult.data.ticket.owner.lastName
-                        ? `${validationResult.data.ticket.owner.firstName} ${validationResult.data.ticket.owner.lastName}`
-                        : validationResult.data.ticket.owner.username}
+                  </div>
+                  <div className="flex items-center">
+                    <Ticket className="w-4 h-4 text-gray-500 mr-2" />
+                    <span className="text-sm text-gray-600">
+                      Ticket Description:
+                    </span>
+                    <span className="ml-2 font-medium text-gray-600">
+                      {validationResult.data.ticket.ticketType.description}
                     </span>
                   </div>
 

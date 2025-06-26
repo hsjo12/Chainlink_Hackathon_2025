@@ -84,3 +84,84 @@ export const CreateTicketValidationSchema = z.object({
 
 export const UpdateTicketValidationSchema =
   CreateTicketValidationSchema.partial()
+
+export interface ITicketValidationGetResponse {
+  ticketValidation: {
+    id: string
+    contractAddress: string
+    tokenId: string
+    eventId: string
+    ticketTypeId: string
+    isUsed: boolean
+    usedAt: string | null
+    validatedBy: string | null
+    createdAt: string
+    updatedAt: string
+  }
+}
+
+// Define the shape for the PUT request body based on your schema
+export interface IUpdateTicketValidationPayload {
+  isUsed: boolean
+  usedAt?: string
+  validatedBy?: string
+}
+
+// Extend your ValidationResult interface to include more detailed ticket info
+export interface IValidationResult {
+  success: boolean
+  message: string
+  data?: {
+    ticket: {
+      id: string
+      tokenId: string
+      status: string // e.g., "valid", "used", "invalid", "marked_used"
+      usedAt: string | null // Can be null if not used
+      validatedBy: string | null // Can be null if not used
+      event: {
+        title: string
+        location: string
+        startDate: string
+      }
+      ticketType: {
+        name: string
+        description: string
+      }
+    }
+  }
+}
+
+// Define the shape of the Event response
+export interface EventResponse {
+  id: string
+  title: string
+  description: string
+  imageUrl: string
+  bannerUrl: string
+  category: string
+  location: string
+  startDate: string
+  endDate: string
+  timezone: string
+  organizerAddress: string
+  ticketAddress: string
+  launchpadAddress: string
+  marketAddress: string
+  platformFeePercent: string
+  royaltyFeePercent: string
+  maxPerWallet: number
+  createdAt: string
+  updatedAt: string
+  ticketTypes: EventTicketType[] // Array of ticket types
+}
+
+// Define the shape of a single TicketType from the event response
+interface EventTicketType {
+  id: string
+  eventId: string
+  name: string // This is the field we want to display
+  description: string
+  price: string
+  currency: string
+  totalSupply: number
+}
