@@ -13,6 +13,30 @@ import {
   AlertCircle,
 } from 'lucide-react'
 
+// Define the shape of the API response for ticket validation (GET)
+interface TicketValidationGetResponse {
+  ticketValidation: {
+    id: string
+    contractAddress: string
+    tokenId: string
+    eventId: string
+    ticketTypeId: string
+    isUsed: boolean
+    usedAt: string | null
+    validatedBy: string | null
+    createdAt: string
+    updatedAt: string
+  }
+}
+
+// Define the shape for the PUT request body based on your schema
+interface UpdateTicketValidationPayload {
+  isUsed: boolean
+  usedAt?: string
+  validatedBy?: string
+}
+
+// Extend your ValidationResult interface to include more detailed ticket info
 interface ValidationResult {
   success: boolean
   message: string
@@ -20,9 +44,9 @@ interface ValidationResult {
     ticket: {
       id: string
       tokenId: string
-      status: string
-      usedAt: string
-      usedBy: string
+      status: string // e.g., "valid", "used", "invalid", "marked_used"
+      usedAt: string | null // Can be null if not used
+      usedBy: string | null // Can be null if not used
       event: {
         title: string
         location: string
@@ -44,26 +68,27 @@ export default function ScanQrCode() {
   const [isScanning, setIsScanning] = useState(false)
   const [validationResult, setValidationResult] =
     useState<ValidationResult | null>(null)
-  const [staffInfo, setStaffInfo] = useState({ id: '', name: '' }) // Kept for completeness
+  const [staffInfo, setStaffInfo] = useState({
+    id: 'STAFF123',
+    name: 'John Doe',
+  })
   const [isLoading, setIsLoading] = useState(false)
   const scannerRef = useRef<Html5QrcodeScanner | null>(null)
   const qrcodeRegionId = 'html5qr-code-full-region'
 
   const config = {
-    fps: 60,
+    fps: 10,
     qrbox: { width: 250, height: 250 },
     rememberLastUsedCamera: true,
     supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
   }
 
-  // Ref to hold the current `isScanning` value, useful in callbacks
   const isScanningRef = useRef(isScanning)
   useEffect(() => {
     isScanningRef.current = isScanning
   }, [isScanning])
 
   const onScanSuccess = async (decodedText: string, decodedResult: any) => {
-    // Only process if we are currently in scanning mode
     if (!isScanningRef.current) {
       console.log(
         'Scan result received, but scanner is no longer active. Ignoring.'
@@ -72,116 +97,176 @@ export default function ScanQrCode() {
     }
 
     setIsLoading(true)
-    // Do NOT call setIsScanning(false) here immediately.
-    // We want the scanner to continue scanning until explicitly stopped by the user
-    // or until the validation process (if it involves an API call) decides to stop it.
+    setValidationResult(null) // Clear previous validation results
 
     try {
-      alert(
-        `QR Code scanned successfully! ${decodedText}, ${JSON.stringify(
-          decodedResult
-        )}`
-      )
+      console.log(`QR Code scanned successfully! Decoded text: ${decodedText}`)
 
-      // Simulate API call or validation logic
-      // In a real app, you'd fetch /api/validateTicket?code=${decodedText}
-      const mockSuccess = decodedText.includes('valid') // Example condition
-      if (mockSuccess) {
+      // 1. Parse the URL from the QR code content
+      const url = new URL(decodedText)
+      const contractAddress = url.searchParams.get('contractAddress')
+      const tokenId = url.searchParams.get('tokenId')
+
+      if (!contractAddress || !tokenId) {
         setValidationResult({
-          success: true,
-          message: 'Ticket validated successfully!',
+          success: false,
+          message:
+            'QR code content is invalid. Missing contractAddress or tokenId.',
+        })
+        setIsScanning(false) // Stop scanning on invalid QR content
+        return
+      }
+
+      // 2. Perform GET request to check current ticket status
+      const getValidationApiUrl = `/api/ticket-validation?contractAddress=${contractAddress}&tokenId=${tokenId}`
+      const getResponse = await fetch(getValidationApiUrl)
+
+      if (!getResponse.ok) {
+        const errorData = await getResponse
+          .json()
+          .catch(() => ({ message: 'Unknown error' }))
+        setValidationResult({
+          success: false,
+          message: `API Error (GET): ${getResponse.status} - ${
+            errorData.message || 'Failed to fetch validation data.'
+          }`,
+        })
+        setIsScanning(false) // Stop on GET API error
+        return
+      }
+
+      const getResult: TicketValidationGetResponse = await getResponse.json()
+      const ticketValidation = getResult.ticketValidation
+
+      // Simulate getting event/owner/ticketType info (you'll need real data here)
+      // This is still placeholder data. In a real app, this should come from
+      // your backend either as part of the initial GET response or a separate API.
+      const mockTicketDetails = {
+        event: {
+          title: 'Summer Music Fest',
+          location: 'Open Air Arena',
+          startDate: '2025-08-10T18:00:00Z',
+        },
+        owner: { username: 'johndoe123', firstName: 'John', lastName: 'Doe' },
+        ticketType: { name: 'VIP Pass' },
+      }
+
+      if (ticketValidation.isUsed) {
+        // Ticket is already used
+        setValidationResult({
+          success: false,
+          message: 'Ticket has already been used.',
           data: {
             ticket: {
-              id: 'mock-id-123',
-              tokenId: decodedText,
-              status: 'valid',
-              usedAt: new Date().toISOString(),
-              usedBy: staffInfo.name || 'Unknown Staff',
-              event: {
-                title: 'Mock Event Name',
-                location: 'Virtual World',
-                startDate: '2025-07-01T10:00:00Z',
-              },
-              owner: {
-                username: 'mockuser',
-                firstName: 'John',
-                lastName: 'Doe',
-              },
-              ticketType: {
-                name: 'General Admission',
-              },
+              id: ticketValidation.id,
+              tokenId: ticketValidation.tokenId,
+              status: 'used',
+              usedAt: ticketValidation.usedAt,
+              usedBy: ticketValidation.validatedBy,
+              event: mockTicketDetails.event, // Use mock data for display
+              owner: mockTicketDetails.owner, // Use mock data for display
+              ticketType: mockTicketDetails.ticketType, // Use mock data for display
             },
           },
         })
-        // After a successful validation, you likely want to stop the scanner
-        setIsScanning(false) // This will trigger the useEffect cleanup
+        setIsScanning(false) // Stop scanning after detecting used ticket
       } else {
-        setValidationResult({
-          success: false,
-          message: 'Invalid ticket or already used.',
+        // Ticket is valid and not used, proceed to mark it as used
+        const now = new Date().toISOString()
+        const updatePayload: UpdateTicketValidationPayload = {
+          isUsed: true,
+        }
+
+        const putValidationApiUrl = `/api/ticket-validation/${ticketValidation.id}` // Your PUT API uses ID in params
+        const putResponse = await fetch(putValidationApiUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updatePayload),
         })
-        // If validation fails, perhaps the scanner should continue for the next attempt
-        // Or stop it if you want to force user to click start again
-        // For now, let's keep it scanning on failure
-        // setIsScanning(false); // Optional: stop on failure too
+
+        if (!putResponse.ok) {
+          const updateErrorData = await putResponse
+            .json()
+            .catch(() => ({ message: 'Unknown error' }))
+          setValidationResult({
+            success: false,
+            message: `API Error (PUT): ${putResponse.status} - ${
+              updateErrorData.message || 'Failed to mark ticket as used.'
+            }`,
+          })
+          setIsScanning(false) // Stop on PUT API error
+          return
+        }
+
+        // Successfully marked as used
+        setValidationResult({
+          success: true,
+          message:
+            'Ticket successfully validated and marked as used. Allow entry!',
+          data: {
+            ticket: {
+              id: ticketValidation.id,
+              tokenId: ticketValidation.tokenId,
+              status: 'marked_used', // Custom status for clarity
+              usedAt: now,
+              usedBy: staffInfo.name || staffInfo.id, // Display staff name if available, else ID
+              event: mockTicketDetails.event, // Use mock data for display
+              owner: mockTicketDetails.owner, // Use mock data for display
+              ticketType: mockTicketDetails.ticketType, // Use mock data for display
+            },
+          },
+        })
+        setIsScanning(false) // Stop scanning after successful validation and usage
       }
     } catch (error) {
-      console.error('Validation error:', error)
+      console.error('Validation process error:', error)
       setValidationResult({
         success: false,
-        message: 'Failed to validate ticket. Please try again.',
+        message:
+          'An unexpected error occurred during validation. Check console for details.',
       })
-      // Ensure scanner is stopped on critical errors
-      setIsScanning(false)
+      setIsScanning(false) // Stop scanning on unexpected errors
     } finally {
       setIsLoading(false)
     }
   }
 
   const onScanFailure = (error: string) => {
-    // Handle scan failure silently or log for debugging
-    // This often fires continuously if no QR code is in view.
-    // Avoid setting state here unless it's for a specific error message.
     // console.warn('QR scan error:', error);
   }
 
   const startScanning = () => {
     setIsScanning(true)
-    setValidationResult(null) // Clear previous results
+    setValidationResult(null)
   }
 
   const stopScanning = async () => {
-    // This will trigger the cleanup in the useEffect
     if (scannerRef.current && isScanning) {
-      // Ensure scanner exists and is active before trying to clear
       try {
         await scannerRef.current.clear()
+        console.log('Scanner cleared successfully.')
       } catch (err) {
-        // This catch specifically handles the "already under transition" error
-        console.warn('Attempted to clear scanner while it was busy:', err)
+        console.warn('Failed to clear html5QrcodeScanner while stopping:', err)
       } finally {
         scannerRef.current = null
-        setIsScanning(false) // Set state AFTER attempting to clear
+        setIsScanning(false)
       }
     } else {
-      setIsScanning(false) // If scanner is not active, just update state
+      setIsScanning(false)
     }
   }
 
-  // useEffect to manage the Html5QrcodeScanner lifecycle
   useEffect(() => {
-    let html5QrcodeScannerInstance: Html5QrcodeScanner | null = null
-
     if (isScanning) {
       const element = document.getElementById(qrcodeRegionId)
       if (!element) {
         console.error(`Element with ID ${qrcodeRegionId} not found.`)
-        setIsScanning(false) // Reset state if element is missing unexpectedly
+        setIsScanning(false)
         return
       }
 
-      // If a scanner instance already exists, clear it before creating a new one
-      // This is a failsafe, usually not needed with proper cleanup
       if (scannerRef.current) {
         scannerRef.current
           .clear()
@@ -189,38 +274,29 @@ export default function ScanQrCode() {
         scannerRef.current = null
       }
 
-      html5QrcodeScannerInstance = new Html5QrcodeScanner(
+      scannerRef.current = new Html5QrcodeScanner(
         qrcodeRegionId,
         config,
         /* verbose= */ true
       )
 
-      // Store the instance in ref
-      scannerRef.current = html5QrcodeScannerInstance
-
-      // Render the scanner
-      html5QrcodeScannerInstance.render(onScanSuccess, onScanFailure)
+      scannerRef.current.render(onScanSuccess, onScanFailure)
     } else {
-      // Cleanup: clear the scanner when `isScanning` is false
       if (scannerRef.current) {
         scannerRef.current
           .clear()
           .catch((err) => {
-            // This is the specific error you're seeing.
-            // It means Html5Qrcode is already in the middle of a state change (like stopping).
-            // We can often just log it and proceed, as the state will eventually settle.
             console.warn(
-              'Failed to clear html5QrcodeScanner during cleanup (possibly already stopping):',
+              'Failed to clear html5QrcodeScanner during cleanup:',
               err
             )
           })
           .finally(() => {
-            scannerRef.current = null // Ensure ref is nulled after attempting clear
+            scannerRef.current = null
           })
       }
     }
 
-    // Cleanup function: This runs when the component unmounts or when `isScanning` changes to false
     return () => {
       if (scannerRef.current) {
         scannerRef.current
@@ -236,9 +312,9 @@ export default function ScanQrCode() {
           })
       }
     }
-  }, [isScanning]) // Depend on isScanning
+  }, [isScanning, config])
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A'
     try {
       return new Date(dateString).toLocaleString()
@@ -247,6 +323,12 @@ export default function ScanQrCode() {
       return 'Invalid Date'
     }
   }
+
+  // Optional: Function to save staff info if you uncomment the input fields
+  // const saveStaffInfo = () => {
+  //   // Implement saving staffInfo to localStorage or a global state if desired
+  //   console.log('Staff Info Saved:', staffInfo);
+  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
@@ -263,6 +345,46 @@ export default function ScanQrCode() {
               Scan QR codes to validate event tickets
             </p>
           </div>
+
+          {/* Staff Information (Uncomment and implement saveStaffInfo if needed) */}
+          {/* <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+              <User className="w-5 h-5 mr-2" />
+              Staff Information
+            </h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Staff ID
+                </label>
+                <input
+                  type="text"
+                  value={staffInfo.id}
+                  onChange={(e) =>
+                    setStaffInfo({ ...staffInfo, id: e.target.value })
+                  }
+                  // onBlur={saveStaffInfo} // Uncomment if you have this function
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter your staff ID"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  value={staffInfo.name}
+                  onChange={(e) =>
+                    setStaffInfo({ ...staffInfo, name: e.target.value })
+                  }
+                  // onBlur={saveStaffInfo} // Uncomment if you have this function
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter your full name"
+                />
+              </div>
+            </div>
+          </div> */}
 
           {/* Scanner Section */}
           <div className="text-center mb-6">
@@ -320,7 +442,7 @@ export default function ScanQrCode() {
                   }`}
                 >
                   {validationResult.success
-                    ? 'Ticket Valid'
+                    ? 'Ticket Validated!'
                     : 'Validation Failed'}
                 </h3>
               </div>
@@ -333,7 +455,7 @@ export default function ScanQrCode() {
                 {validationResult.message}
               </p>
 
-              {validationResult.success && validationResult.data && (
+              {validationResult.data && (
                 <div className="bg-white rounded-lg p-4 space-y-3">
                   <div className="flex items-center">
                     <Ticket className="w-4 h-4 text-gray-500 mr-2" />
@@ -374,7 +496,11 @@ export default function ScanQrCode() {
 
                   <div className="flex items-center">
                     <AlertCircle className="w-4 h-4 text-gray-500 mr-2" />
-                    <span className="text-sm text-gray-600">Validated At:</span>
+                    <span className="text-sm text-gray-600">
+                      {validationResult.data.ticket.status === 'used'
+                        ? 'Used At:'
+                        : 'Validated At:'}
+                    </span>
                     <span className="ml-2">
                       {formatDate(validationResult.data.ticket.usedAt)}
                     </span>
@@ -388,11 +514,18 @@ export default function ScanQrCode() {
           <div className="bg-blue-50 rounded-lg p-4">
             <h4 className="font-semibold text-blue-900 mb-2">Instructions:</h4>
             <ul className="text-sm text-blue-800 space-y-1">
-              <li>1. Enter your staff ID and name above (if enabled)</li>
-              <li>2. Click "Start Scanning" to activate the camera</li>
-              <li>3. Point the camera at the ticket's QR code</li>
-              <li>4. The system will automatically validate the ticket</li>
-              <li>5. Check the validation result before allowing entry</li>
+              <li>
+                1. Ensure your staff ID and name are entered (if enabled).
+              </li>
+              <li>2. Click "Start Scanning" to activate the camera.</li>
+              <li>
+                3. Point the camera at the ticket's QR code (which contains the
+                API URL).
+              </li>
+              <li>
+                4. The system will automatically validate and mark the ticket.
+              </li>
+              <li>5. Check the validation result before allowing entry.</li>
             </ul>
           </div>
         </div>

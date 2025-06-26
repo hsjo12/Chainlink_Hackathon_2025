@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/lib/generated/prisma'
 import { z } from 'zod'
 import { UpdateTicketValidationSchema } from '@/lib/types'
 
@@ -15,7 +15,7 @@ export async function PUT(
 
     // Update the ticket validation
     const ticketValidation = await prisma.ticketValidation.update({
-      where: { id: params.id },
+      where: { id: params?.id },
       data: {
         ...parsedData,
         usedAt: parsedData.usedAt ? new Date(parsedData.usedAt) : undefined,

@@ -1,11 +1,18 @@
 import { generateQRCodeImage } from '@/lib/qr-utils'
+import z from 'zod'
 
-export default async function GenerateQRCodePage() {
+const GenerateQRCodePageProps = z.object({
+  tokenId: z.string().min(1, 'Ticket address is required'),
+  contractAddress: z.string().min(1, 'Organizer address is required'),
+})
+
+export default async function GenerateQRCodePage(
+  props: z.infer<typeof GenerateQRCodePageProps>
+) {
   try {
-    const qrData = 'Sample QR Code Data' // Replace with actual data
     const qrCodeImage = await generateQRCodeImage(
-      'aaa9ec2d-7005-46bf-92a6-1f8fe5494910',
-      '0x1234567890abcdef1234567890abcdef12345678'
+      props.tokenId,
+      props.contractAddress
     )
 
     return (
