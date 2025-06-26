@@ -73,6 +73,7 @@ describe("Ticket Test", () => {
         const nonce = await ticketLaunchpad.nonces(deployer.address);
         const deadline = Math.floor(new Date().getTime() / 1000);
         const mintSignatureParams = await getMintSignatureParams(
+          ticketLaunchpad.target,
           deployer.address,
           seat,
           nonce,
@@ -95,6 +96,7 @@ describe("Ticket Test", () => {
         const nonce = await ticketLaunchpad.nonces(deployer.address);
         const deadline = Math.floor(new Date().getTime() / 1000);
         const mintSignatureParams = await getMintSignatureParams(
+          ticketLaunchpad.target,
           deployer.address,
           seat,
           nonce,
@@ -123,6 +125,7 @@ describe("Ticket Test", () => {
         const nonce = await ticketLaunchpad.nonces(deployer.address);
         const deadline = Math.floor(new Date().getTime() / 1000);
         const mintSignatureParams = await getMintBatchSignatureParams(
+          ticketLaunchpad.target,
           deployer.address,
           seats,
           nonce,
@@ -151,6 +154,7 @@ describe("Ticket Test", () => {
         const nonce = await ticketLaunchpad.nonces(deployer.address);
         const deadline = Math.floor(new Date().getTime() / 1000);
         const mintSignatureParams = await getMintBatchSignatureParams(
+          ticketLaunchpad.target,
           deployer.address,
           seats,
           nonce,
@@ -216,6 +220,22 @@ describe("Ticket Test", () => {
         );
       });
 
+      it("should allow only the owner to set ticket price and max supply per tier", async () => {
+        const MAX_SUPPLY = 10;
+        const USD_PRICE = ethers.parseUnits("300", 8);
+        await ticketLaunchpad.setTierMaxSupplyPrices(
+          [STANDARD],
+          [MAX_SUPPLY],
+          [USD_PRICE]
+        );
+        expect((await ticketLaunchpad.tierInfo(STANDARD)).priceUSD).to.eq(
+          USD_PRICE
+        );
+        expect((await ticketLaunchpad.tierInfo(STANDARD)).maxSupply).to.eq(
+          MAX_SUPPLY
+        );
+      });
+
       it("should allow only the owner to set payment tokens and price feeds", async () => {
         const FAKE_TOKEN = ethers.ZeroAddress;
         const FAKE_PRICE_FEED = ethers.ZeroAddress;
@@ -230,6 +250,7 @@ describe("Ticket Test", () => {
         const nonce = await ticketLaunchpad.nonces(deployer.address);
         const deadline = Math.floor(new Date().getTime() / 1000);
         const mintSignatureParams = await getMintSignatureParams(
+          ticketLaunchpad.target,
           deployer.address,
           seat,
           nonce,
@@ -289,12 +310,14 @@ describe("Ticket Test", () => {
         const nonce = await ticketLaunchpad.nonces(deployer.address);
         const deadline = Math.floor(new Date().getTime() / 1000);
         const mintSignatureParams = await getMintSignatureParams(
+          ticketLaunchpad.target,
           deployer.address,
           seat,
           nonce,
           deadline
         );
         const mintBatchSignatureParams = await getMintBatchSignatureParams(
+          ticketLaunchpad.target,
           deployer.address,
           seats,
           nonce,
@@ -317,12 +340,14 @@ describe("Ticket Test", () => {
         const nonce = await ticketLaunchpad.nonces(deployer.address);
         const deadline = Math.floor(new Date().getTime() / 1000);
         const mintSignatureParams = await getMintSignatureParams(
+          ticketLaunchpad.target,
           deployer.address,
           seat,
           nonce,
           deadline
         );
         const mintBatchSignatureParams = await getMintBatchSignatureParams(
+          ticketLaunchpad.target,
           deployer.address,
           seats,
           nonce,
@@ -345,12 +370,14 @@ describe("Ticket Test", () => {
         const nonce = await ticketLaunchpad.nonces(deployer.address);
         const deadline = Math.floor(new Date().getTime() / 1000);
         const mintSignatureParams = await getMintSignatureParams(
+          ticketLaunchpad.target,
           deployer.address,
           seat,
           nonce,
           deadline
         );
         const mintBatchSignatureParams = await getMintBatchSignatureParams(
+          ticketLaunchpad.target,
           deployer.address,
           seats,
           nonce,
@@ -396,12 +423,14 @@ describe("Ticket Test", () => {
         const invalidNonce = 99;
         const deadline = Math.floor(new Date().getTime() / 1000);
         const mintSignatureParams = await getMintSignatureParams(
+          ticketLaunchpad.target,
           deployer.address,
           seat,
           invalidNonce,
           deadline
         );
         const mintBatchSignatureParams = await getMintBatchSignatureParams(
+          ticketLaunchpad.target,
           deployer.address,
           seats,
           invalidNonce,
@@ -441,12 +470,14 @@ describe("Ticket Test", () => {
         const nonce = await ticketLaunchpad.nonces(deployer.address);
         const invalidDeadline = 1000;
         const mintSignatureParams = await getMintSignatureParams(
+          ticketLaunchpad.target,
           deployer.address,
           seat,
           nonce,
           invalidDeadline
         );
         const mintBatchSignatureParams = await getMintBatchSignatureParams(
+          ticketLaunchpad.target,
           deployer.address,
           seats,
           nonce,
@@ -489,6 +520,7 @@ describe("Ticket Test", () => {
         const nonce = await ticketLaunchpad.nonces(deployer.address);
         const deadline = Math.floor(new Date().getTime() / 1000);
         const mintSignatureParams = await getMintSignatureParams(
+          ticketLaunchpad.target,
           deployer.address,
           seat,
           nonce,
@@ -496,6 +528,7 @@ describe("Ticket Test", () => {
           invalidSinger
         );
         const mintBatchSignatureParams = await getMintBatchSignatureParams(
+          ticketLaunchpad.target,
           deployer.address,
           seats,
           nonce,
@@ -537,6 +570,7 @@ describe("Ticket Test", () => {
         let nonce = await ticketLaunchpad.nonces(deployer.address);
         const deadline = Math.floor(new Date().getTime() / 1000);
         let mintSignatureParams = await getMintSignatureParams(
+          ticketLaunchpad.target,
           deployer.address,
           seat,
           nonce,
@@ -554,12 +588,14 @@ describe("Ticket Test", () => {
         });
         nonce = await ticketLaunchpad.nonces(deployer.address);
         mintSignatureParams = await getMintSignatureParams(
+          ticketLaunchpad.target,
           deployer.address,
           seat,
           nonce,
           deadline
         );
         const mintBatchSignatureParams = await getMintBatchSignatureParams(
+          ticketLaunchpad.target,
           deployer.address,
           seats,
           nonce,
@@ -567,29 +603,29 @@ describe("Ticket Test", () => {
         );
         await expect(
           ticketLaunchpad.payWithETH(mintSignatureParams, { value: ethPrice })
-        ).to.revertedWithCustomError(ticket, "SeatAlreadyClaimed");
+        ).to.revertedWithCustomError(ticketLaunchpad, "SeatAlreadyClaimed");
 
         await expect(
           ticketLaunchpad.payBatchWithETH(mintBatchSignatureParams, {
             value: ethBatchPrice,
           })
-        ).to.revertedWithCustomError(ticket, "SeatAlreadyClaimed");
+        ).to.revertedWithCustomError(ticketLaunchpad, "SeatAlreadyClaimed");
 
         await usdc.approve(ticketLaunchpad.target, ethers.MaxUint256);
         await expect(
           ticketLaunchpad.payWithToken(usdc.target, mintSignatureParams)
-        ).to.revertedWithCustomError(ticket, "SeatAlreadyClaimed");
+        ).to.revertedWithCustomError(ticketLaunchpad, "SeatAlreadyClaimed");
 
         await expect(
           ticketLaunchpad.payBatchWithToken(
             usdc.target,
             mintBatchSignatureParams
           )
-        ).to.revertedWithCustomError(ticket, "SeatAlreadyClaimed");
+        ).to.revertedWithCustomError(ticketLaunchpad, "SeatAlreadyClaimed");
 
         await expect(
           ticketLaunchpad.adminMint(deployer.address, [seat])
-        ).to.revertedWithCustomError(ticket, "SeatAlreadyClaimed");
+        ).to.revertedWithCustomError(ticketLaunchpad, "SeatAlreadyClaimed");
       });
     });
 

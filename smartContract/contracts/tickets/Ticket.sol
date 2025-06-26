@@ -7,7 +7,7 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {EventDetails} from "../types/EventDetails.sol";
 import {Tier} from "../types/TierInfo.sol";
 import {Seat} from "../types/Seat.sol";
-import {InvalidTime, LengthMismatch, OnlyTicketLaunchpad, SeatAlreadyClaimed} from "../errors/Errors.sol";
+import {InvalidTime, LengthMismatch, OnlyTicketLaunchpad} from "../errors/Errors.sol";
 
 /**
  * @title Ticket
@@ -42,9 +42,6 @@ contract Ticket is
 
     /// @dev Mapping of tier to ticket image URI.
     mapping(Tier tier => string imageURI) public imageURIByTier;
-
-    /// @dev Tracks claimed seat numbers to prevent duplication.
-    mapping(string seatNumber => bool used) public claimedSeatNumbers;
 
     /// @dev Disables all initializers for implementation contract.
     constructor() {
@@ -87,12 +84,6 @@ contract Ticket is
      * @param seat The Seat struct containing section, seat number, and tier information.
      */
     function mint(address to, Seat calldata seat) external onlyTicketLaunchpad {
-        if (seat.tier != Tier.STANDING) {
-            if (claimedSeatNumbers[seat.seatNumber])
-                revert SeatAlreadyClaimed();
-            claimedSeatNumbers[seat.seatNumber] = true;
-        }
-
         uint256 tokenId = _nextTokenId();
         seatsTokenId[tokenId] = seat;
         _safeMint(to, 1);
@@ -122,12 +113,6 @@ contract Ticket is
 
         for (uint256 i = 0; i < len; ) {
             Seat calldata seat = seats[i];
-
-            if (seat.tier != Tier.STANDING) {
-                if (claimedSeatNumbers[seat.seatNumber])
-                    revert SeatAlreadyClaimed();
-                claimedSeatNumbers[seat.seatNumber] = true;
-            }
 
             seatsTokenId[tokenId++] = seat;
 
@@ -247,6 +232,7 @@ contract Ticket is
     function _tierName(Tier tier) private pure returns (string memory) {
         if (tier == Tier.VIP) return "VIP";
         if (tier == Tier.STANDARD) return "STANDARD";
+        if (tier == Tier.STANDING) return "STANDING";
         return "";
     }
 

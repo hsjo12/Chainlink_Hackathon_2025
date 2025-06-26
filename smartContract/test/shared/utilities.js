@@ -87,9 +87,9 @@ const getSampleEventStructSet = () => {
     ],
 
     tierInfoList: [
-      [VIP_PRICE, VIP_MAX_SUPPLY, 0],
-      [STANDARD_PRICE, STANDARD_MAX_SUPPLY, 0],
-      [STANDING_PRICE, STANDING_MAX_SUPPLY, 0],
+      [VIP_PRICE, VIP_MAX_SUPPLY, 0, true],
+      [STANDARD_PRICE, STANDARD_MAX_SUPPLY, 0, true],
+      [STANDING_PRICE, STANDING_MAX_SUPPLY, 0, false],
     ],
     paymentTokens: [USDC_ADDRESS_ON_ETH_MAIN_NET],
     priceFeeds: [USDC_USD_PRICE_FEED_ON_ETH_MAIN_NET],
@@ -161,6 +161,7 @@ const getSampleMultipleStandingSeats = () => {
   ];
 };
 const getMintSignatureParams = async (
+  launchpad,
   to,
   seat,
   nonce,
@@ -173,16 +174,17 @@ const getMintSignatureParams = async (
 
   const abiCoder = AbiCoder.defaultAbiCoder();
   const encoded = abiCoder.encode(
-    ["address", "string", "string", "uint8", "uint256", "uint64"],
-    [to, section, seatNumber, tier, nonce, deadline]
+    ["address", "address", "string", "string", "uint8", "uint256", "uint64"],
+    [launchpad, to, section, seatNumber, tier, nonce, deadline]
   );
   const hash = keccak256(encoded);
   const signature = await signer.signMessage(getBytes(hash));
 
-  return [to, seat, nonce, deadline, signature];
+  return [launchpad, to, seat, nonce, deadline, signature];
 };
 
 const getMintBatchSignatureParams = async (
+  launchpad,
   to,
   seats,
   nonce,
@@ -196,17 +198,18 @@ const getMintBatchSignatureParams = async (
   const encoded = abiCoder.encode(
     [
       "address",
+      "address",
       "tuple(string section, string seatNumber, uint8 tier)[]",
       "uint256",
       "uint64",
     ],
-    [to, seats, nonce, deadline]
+    [launchpad, to, seats, nonce, deadline]
   );
 
   const hash = keccak256(encoded);
   const signature = await signer.signMessage(getBytes(hash));
 
-  return [to, seats, nonce, deadline, signature];
+  return [launchpad, to, seats, nonce, deadline, signature];
 };
 
 module.exports = {
