@@ -2,6 +2,7 @@ import { CreatePairParams } from "@/types/params";
 import { getWriteContract } from "../provider";
 import TicketFactory from "@/smartContracts/abis/TicketFactory.json";
 import { Interface } from "ethers";
+import { txMessage } from "@/lib/react-tostify/popup";
 
 export const createTicketPair = async (
   walletProvider: any,
@@ -35,6 +36,10 @@ export const createTicketPair = async (
       paymentTokens,
       priceFeeds
     );
+
+    // Show Pop up message
+    await txMessage(tx);
+
     const receipt = await tx.wait();
     const log = receipt.logs[receipt.logs.length - 1];
     const parsed = iface.parseLog({

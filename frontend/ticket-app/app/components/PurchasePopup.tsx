@@ -37,6 +37,7 @@ type PurchasePopupProps = {
   };
   onPurchaseComplete: () => void;
   updateAvailableTicket: (type: string) => void;
+  setSelected: (type: null) => void;
 };
 
 const getPaymentTokensOptions = (cryptocurrencies: string[]) => {
@@ -48,9 +49,14 @@ const formatUnits = (
   decimals: number,
   symbol: string
 ) => {
-  return `$${parseFloat(ethers.formatUnits(price.toString(), decimals)).toFixed(
-    5
-  )} ${symbol}`;
+  try {
+    return `$${parseFloat(
+      ethers.formatUnits(price.toString(), decimals)
+    ).toFixed(5)} ${symbol}`;
+  } catch (error) {
+    console.log(error);
+    return `N/A`;
+  }
 };
 
 export function PurchasePopup({
@@ -59,6 +65,7 @@ export function PurchasePopup({
   ticketInfo,
   onPurchaseComplete,
   updateAvailableTicket,
+  setSelected,
 }: PurchasePopupProps) {
   const [purchaseStep, setPurchaseStep] = useState<
     "connect" | "approve" | "confirm" | "processing" | "success" | "fail"
@@ -99,7 +106,7 @@ export function PurchasePopup({
       setPurchaseStep("confirm");
       (async () => {
         const ethBalance = await ethBalanceOf(address);
-        setUserBalance(ethBalance);
+        setUserBalance(ethBalance || 0);
       })();
     } else setPurchaseStep("connect");
   }, [isConnected, reset]);
@@ -216,6 +223,7 @@ export function PurchasePopup({
   };
 
   const handleClose = () => {
+    setSelected(null);
     setReset(new Date().getTime());
     if (purchaseStep === "success") {
       onPurchaseComplete();

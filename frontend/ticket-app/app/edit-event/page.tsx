@@ -1,4 +1,4 @@
-'use client'
+"use client";
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,19 +6,21 @@ import { HeaderMenu } from "@/app/components/HeaderMenu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PlusCircle, MinusCircle, Upload } from "lucide-react";
+import { Ticket, Upload } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-
-// Define cryptocurrency options
-const cryptocurrencies = [
-  { id: "usd", name: "USD" },
-  { id: "eth", name: "Ethereum (ETH)" },
-  { id: "btc", name: "Bitcoin (BTC)" },
-  { id: "sol", name: "Solana (SOL)" },
-  { id: "usdc", name: "USD Coin (USDC)" },
-];
+import { CRYPTO_CURRENCIES } from "@/constants/constants";
+import { setEventDetails } from "@/lib/web3/smartContract/ticket";
+import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
+import { buildTierValue } from "@/lib/web3/utils";
+import {
+  setTierMaxSupplyPrices,
+  setPaymentTokens,
+  totalSoldTicket,
+} from "@/lib/web3/smartContract/ticketLaunchpad";
+import { getReadOnlyContract } from "@/lib/web3/provider";
+import { toastMessage } from "@/lib/react-tostify/popup";
 
 // Define ticket type interface
 interface TicketType {
@@ -29,20 +31,29 @@ interface TicketType {
 }
 
 export default function EditEventPage() {
+  const { address, isConnected } = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider("eip155");
+
   const router = useRouter();
   const searchParams = useSearchParams();
-  const eventId = searchParams.get('eventId');
-  
+  const eventId = searchParams.get("eventId");
+
+  const [launchpad, setLaunchpad] = useState("");
   const [title, setTitle] = useState("");
+  const [symbol, setSymbol] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
-  const [date, setDate] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [dateError, setDateError] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [ticketTypes, setTicketTypes] = useState<TicketType[]>([
-    { id: "regular", name: "Regular", price: "", quantity: "" },
+    { id: "vip", name: "VIP", price: "", quantity: "" },
   ]);
-  const [selectedCryptocurrencies, setSelectedCryptocurrencies] = useState<string[]>(["usd"]);
+  const [selectedCryptocurrencies, setSelectedCryptocurrencies] = useState<
+    string[]
+  >(["usd"]);
   const [tokenLink, setTokenLink] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [eventFound, setEventFound] = useState(false);
@@ -58,72 +69,100 @@ export default function EditEventPage() {
           title: "Tech Conference 2025",
           date: "June 20, 2025",
           location: "San Francisco, CA",
-          summary: "Explore the latest in technology and innovation at Tech Conference 2025.",
+          summary:
+            "Explore the latest in technology and innovation at Tech Conference 2025.",
         },
         {
           id: 2,
           title: "Art & Design Expo",
           date: "July 5, 2025",
           location: "New York, NY",
-          summary: "A gathering of creative minds showcasing the best in contemporary art and design.",
+          summary:
+            "A gathering of creative minds showcasing the best in contemporary art and design.",
         },
         {
           id: 3,
           title: "Startup Pitch Night",
           date: "August 15, 2025",
           location: "Austin, TX",
-          summary: "Watch startups pitch their ideas to investors in a high-energy evening of innovation.",
+          summary:
+            "Watch startups pitch their ideas to investors in a high-energy evening of innovation.",
         },
       ];
 
-      const foundDefaultEvent = defaultEvents.find(e => e.id.toString() === eventId);
+      const foundDefaultEvent = defaultEvents.find(
+        (e) => e.id.toString() === eventId
+      );
 
       if (foundDefaultEvent) {
         // Default events can't be edited, redirect to home
         alert("Default events cannot be edited.");
-        router.push('/');
+        router.push("/");
         return;
       }
 
       // Check localStorage for user-created events
-      const storedEvents = localStorage.getItem('events');
+      const storedEvents = localStorage.getItem("events");
       if (storedEvents) {
         try {
           const parsedEvents = JSON.parse(storedEvents);
-          const foundEvent = parsedEvents.find((e: any) => e.id.toString() === eventId);
+          const foundEvent = parsedEvents.find(
+            (e: any) => e.id.toString() === eventId
+          );
 
           if (foundEvent) {
             // Populate form with event data
             setTitle(foundEvent.title || "");
+            setSymbol(foundEvent.symbol || "");
             setDescription(foundEvent.summary || "");
             setLocation(foundEvent.location || "");
-            setDate(foundEvent.date || "");
+            setStartDate(foundEvent.startDate || "");
+            setEndDate(foundEvent.endDate || "");
             setImagePreview(foundEvent.image || null);
-            
+            setLaunchpad(foundEvent.launchpadAddress);
             // Format date if it's not in YYYY-MM-DD format
-            if (foundEvent.date && !foundEvent.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            if (
+              foundEvent.date &&
+              !foundEvent.date.match(/^\d{4}-\d{2}-\d{2}$/)
+            ) {
               try {
                 const dateObj = new Date(foundEvent.date);
-                const formattedDate = dateObj.toISOString().split('T')[0];
-                setDate(formattedDate);
+                const formattedDate = dateObj.toISOString().split("T")[0];
+                // setDate(formattedDate);
               } catch (error) {
-                console.error('Error formatting date:', error);
+                console.error("Error formatting date:", error);
               }
             }
 
             // Set ticket types
             if (foundEvent.tickets && Array.isArray(foundEvent.tickets)) {
-              const formattedTickets = foundEvent.tickets.map((ticket: any, index: number) => ({
-                id: `ticket-${index + 1}`,
-                name: ticket.type || "",
-                price: ticket.price?.toString() || "",
-                quantity: ticket.quantity?.toString() || ""
-              }));
-              setTicketTypes(formattedTickets.length > 0 ? formattedTickets : [{ id: "regular", name: "Regular", price: "", quantity: "" }]);
+              const formattedTickets = foundEvent.tickets.map(
+                (ticket: any, index: number) => ({
+                  id: `ticket-${index + 1}`,
+                  name: ticket.type || "",
+                  price: ticket.price?.toString() || "",
+                  quantity: ticket.quantity?.toString() || "",
+                })
+              );
+              setTicketTypes(
+                formattedTickets.length > 0
+                  ? formattedTickets
+                  : [
+                      {
+                        id: "regular",
+                        name: "Regular",
+                        price: "",
+                        quantity: "",
+                      },
+                    ]
+              );
             }
 
             // Set cryptocurrencies
-            if (foundEvent.cryptocurrencies && Array.isArray(foundEvent.cryptocurrencies)) {
+            if (
+              foundEvent.cryptocurrencies &&
+              Array.isArray(foundEvent.cryptocurrencies)
+            ) {
               setSelectedCryptocurrencies(foundEvent.cryptocurrencies);
             }
 
@@ -136,21 +175,21 @@ export default function EditEventPage() {
           } else {
             // Event not found, redirect to home
             alert("Event not found.");
-            router.push('/');
+            router.push("/");
           }
         } catch (error) {
-          console.error('Error parsing stored events:', error);
+          console.error("Error parsing stored events:", error);
           alert("Error loading event data.");
-          router.push('/');
+          router.push("/");
         }
       } else {
         // No events in localStorage, redirect to home
         alert("No events found.");
-        router.push('/');
+        router.push("/");
       }
     } else {
       // No eventId provided, redirect to home
-      router.push('/');
+      router.push("/");
     }
   }, [eventId, router]);
 
@@ -159,7 +198,7 @@ export default function EditEventPage() {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setImageFile(file);
-      
+
       // Create preview URL
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -169,29 +208,61 @@ export default function EditEventPage() {
     }
   };
 
-  // Add a new ticket type
-  const addTicketType = () => {
-    const newId = `ticket-${ticketTypes.length + 1}`;
-    setTicketTypes([
-      ...ticketTypes,
-      { id: newId, name: "", price: "", quantity: "" },
-    ]);
-  };
-
-  // Remove a ticket type
-  const removeTicketType = (id: string) => {
-    if (ticketTypes.length > 1) {
-      setTicketTypes(ticketTypes.filter((ticket) => ticket.id !== id));
-    }
-  };
-
   // Update ticket type details
-  const updateTicketType = (id: string, field: keyof TicketType, value: string) => {
-    setTicketTypes(
-      ticketTypes.map((ticket) =>
+  const updateTicketType = async (
+    id: string,
+    field: keyof TicketType,
+    value: string,
+    name: string = ""
+  ) => {
+    setTicketTypes((prev) =>
+      prev.map((ticket) =>
         ticket.id === id ? { ...ticket, [field]: value } : ticket
       )
     );
+
+    if (field === "quantity") {
+      let soldCount = await totalSoldTicket(launchpad, buildTierValue(name));
+      if (Number(soldCount) > Number(value)) {
+        setTicketTypes((prev) =>
+          prev.map((ticket) =>
+            ticket.id === id
+              ? { ...ticket, quantity: String(Number(soldCount)) }
+              : ticket
+          )
+        );
+        return toastMessage(`Cannot set below sold (${soldCount})`, "warn");
+      }
+    }
+  };
+
+  // set start/end date
+  const handleDateChange = (
+    type: "start" | "end",
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = e.target.value;
+    setDateError("");
+    // set start / end date
+    if (type === "start") {
+      if (endDate && value > endDate) {
+        setDateError("Start Date cannot be later than End Date.");
+        return setStartDate("");
+      } else if (new Date(value).getTime() < Date.now()) {
+        setDateError("Start Date cannot be earlier than now.");
+        return setStartDate("");
+      }
+      setStartDate(value);
+    } else if (type === "end") {
+      if (startDate && startDate > value) {
+        setDateError("End Date cannot be earlier than Start Date.");
+        return setEndDate("");
+      } else if (new Date(value).getTime() < Date.now()) {
+        setDateError("End Date cannot be earlier than now.");
+        return setEndDate("");
+      }
+      setEndDate(value);
+    }
   };
 
   // Toggle cryptocurrency selection
@@ -205,41 +276,111 @@ export default function EditEventPage() {
     }
   };
 
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
+  // Change event details
+  const handleEventDetailSubmit = async (e: React.FormEvent) => {
     try {
-      // For this demo, we'll simulate a successful submission
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      e.preventDefault();
+      setIsSubmitting(true);
+      const storedEvents = JSON.parse(localStorage.getItem("events") || "[]");
+      const foundEvent = storedEvents.find(
+        (e: any) => e.id.toString() === eventId
+      );
 
-      // Create an updated event object
-      const updatedEvent = {
-        id: parseInt(eventId || "0"), // Use the existing ID
+      // Localstorage update
+      Object.assign(foundEvent, {
         title,
-        date,
-        location,
+        symbol,
+        image: imagePreview || "",
         summary: description,
-        image: imagePreview, // In a real app, this would be a URL to the uploaded image
-        tickets: ticketTypes.map(ticket => ({
+        location,
+        startDate,
+        endDate,
+      });
+      const updatedEvents = storedEvents.map((ev: any) =>
+        ev.id.toString() === eventId ? foundEvent : ev
+      );
+      localStorage.setItem("events", JSON.stringify(updatedEvents));
+
+      // Interact with smart contract
+      await setEventDetails(foundEvent.ticketAddress, walletProvider, [
+        title,
+        symbol,
+        imagePreview || "",
+        description,
+        location,
+        Math.floor(new Date(startDate).getTime() / 1000),
+        Math.floor(new Date(endDate).getTime() / 1000),
+      ]);
+    } catch (error) {
+      console.error("Error updating event:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Change ticket types
+  const handleTicketTypesSubmit = async (e: React.FormEvent) => {
+    try {
+      e.preventDefault();
+      setIsSubmitting(true);
+
+      const storedEvents = JSON.parse(localStorage.getItem("events") || "[]");
+      const foundEvent = storedEvents.find(
+        (e: any) => e.id.toString() === eventId
+      );
+
+      // Localstorage update
+      Object.assign(foundEvent, {
+        tickets: ticketTypes.map((ticket) => ({
           type: ticket.name,
           price: parseFloat(ticket.price),
           quantity: parseInt(ticket.quantity),
+          typeValue: buildTierValue(ticket.name),
         })),
+      });
+      const updatedEvents = storedEvents.map((ev: any) =>
+        ev.id.toString() === eventId ? foundEvent : ev
+      );
+      localStorage.setItem("events", JSON.stringify(updatedEvents));
+
+      // Interact with smart contract
+      await setTierMaxSupplyPrices(launchpad, walletProvider, ticketTypes);
+
+      return;
+    } catch (error) {
+      console.error("Error updating event:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Change payment options
+  const handlePaymentOptionsSubmit = async (e: React.FormEvent) => {
+    try {
+      e.preventDefault();
+      setIsSubmitting(true);
+
+      const storedEvents = JSON.parse(localStorage.getItem("events") || "[]");
+      const foundEvent = storedEvents.find(
+        (e: any) => e.id.toString() === eventId
+      );
+
+      // Localstorage update
+      Object.assign(foundEvent, {
         cryptocurrencies: selectedCryptocurrencies,
         tokenLink: tokenLink || null,
-      };
-
-      // Update the event in localStorage
-      const storedEvents = JSON.parse(localStorage.getItem('events') || '[]');
-      const updatedEvents = storedEvents.map((event: any) => 
-        event.id.toString() === eventId ? updatedEvent : event
+      });
+      const updatedEvents = storedEvents.map((ev: any) =>
+        ev.id.toString() === eventId ? foundEvent : ev
       );
-      localStorage.setItem('events', JSON.stringify(updatedEvents));
+      localStorage.setItem("events", JSON.stringify(updatedEvents));
 
-      // Navigate to the home page
-      router.push('/');
+      // Interact with smart contract
+      await setPaymentTokens(
+        launchpad,
+        walletProvider,
+        selectedCryptocurrencies
+      );
     } catch (error) {
       console.error("Error updating event:", error);
     } finally {
@@ -261,33 +402,49 @@ export default function EditEventPage() {
   return (
     <main className="min-h-screen bg-gray-100 p-6">
       <HeaderMenu />
-      
+
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-800">
+          <Link
+            href="/"
+            className="inline-flex items-center text-blue-600 hover:text-blue-800"
+          >
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Events
           </Link>
           <h1 className="text-3xl font-bold">Edit Event</h1>
         </div>
-        
-        <form onSubmit={handleSubmit}>
+
+        <form onSubmit={handleEventDetailSubmit}>
           <Card className="mb-6">
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-4">Event Details</h2>
-              
+
               <div className="space-y-4">
-                <div>
-                  <Label htmlFor="title">Event Title</Label>
-                  <Input
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Enter event title"
-                    required
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="title">Event Title</Label>
+                    <Input
+                      id="title"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="Enter event title"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="symbol">Ticket Symbol</Label>
+                    <Input
+                      id="symbol"
+                      value={symbol}
+                      onChange={(e) => setSymbol(e.target.value)}
+                      placeholder="Enter event ticket symbol"
+                      required
+                    />
+                  </div>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="description">Event Description</Label>
                   <Textarea
@@ -299,7 +456,7 @@ export default function EditEventPage() {
                     required
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="location">Location</Label>
@@ -311,19 +468,38 @@ export default function EditEventPage() {
                       required
                     />
                   </div>
-                  
-                  <div>
-                    <Label htmlFor="date">Date</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      required
-                    />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="startDate">Start Date</Label>
+                      <Input
+                        id="startDate"
+                        type="datetime-local"
+                        value={startDate}
+                        onChange={(e) => handleDateChange("start", e)}
+                        onFocus={(e) => e.target.showPicker?.()}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="endDate">End Date</Label>
+                      <Input
+                        id="endDate"
+                        type="datetime-local"
+                        value={endDate}
+                        onChange={(e) => handleDateChange("end", e)}
+                        onFocus={(e) => e.target.showPicker?.()}
+                        required
+                      />
+                    </div>
+                    {dateError && (
+                      <p className="col-span-2 text-red-500 text-sm mt-1 ">
+                        {dateError}
+                      </p>
+                    )}
                   </div>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="image">Event Image</Label>
                   <div className="mt-1 flex items-center">
@@ -357,42 +533,27 @@ export default function EditEventPage() {
                 </div>
               </div>
             </CardContent>
+            <div className="flex justify-end pr-6">
+              <Button type="submit" disabled={isSubmitting} className="px-6">
+                Update
+              </Button>
+            </div>
           </Card>
-          
+        </form>
+        <form onSubmit={handleTicketTypesSubmit}>
           <Card className="mb-6">
             <CardContent className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">Ticket Types</h2>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addTicketType}
-                  className="flex items-center"
-                >
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add Ticket Type
-                </Button>
               </div>
-              
+
               <div className="space-y-6">
                 {ticketTypes.map((ticket) => (
                   <div key={ticket.id} className="p-4 border rounded-lg">
                     <div className="flex justify-between items-center mb-2">
                       <h3 className="font-medium">Ticket Type</h3>
-                      {ticketTypes.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeTicketType(ticket.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <MinusCircle className="h-4 w-4" />
-                        </Button>
-                      )}
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <Label htmlFor={`${ticket.id}-name`}>Name</Label>
@@ -404,9 +565,10 @@ export default function EditEventPage() {
                           }
                           placeholder="e.g., Regular, VIP"
                           required
+                          disabled
                         />
                       </div>
-                      
+
                       <div>
                         <Label htmlFor={`${ticket.id}-price`}>Price</Label>
                         <Input
@@ -422,16 +584,23 @@ export default function EditEventPage() {
                           required
                         />
                       </div>
-                      
+
                       <div>
-                        <Label htmlFor={`${ticket.id}-quantity`}>Quantity</Label>
+                        <Label htmlFor={`${ticket.id}-quantity`}>
+                          Quantity
+                        </Label>
                         <Input
                           id={`${ticket.id}-quantity`}
                           type="number"
                           min="1"
                           value={ticket.quantity}
                           onChange={(e) =>
-                            updateTicketType(ticket.id, "quantity", e.target.value)
+                            updateTicketType(
+                              ticket.id,
+                              "quantity",
+                              e.target.value,
+                              ticket.name
+                            )
                           }
                           placeholder="Number of tickets"
                           required
@@ -442,35 +611,45 @@ export default function EditEventPage() {
                 ))}
               </div>
             </CardContent>
+            <div className="flex justify-end pr-6">
+              <Button type="submit" disabled={isSubmitting} className="px-6">
+                Update
+              </Button>
+            </div>
           </Card>
-          
+        </form>
+        <form onSubmit={handlePaymentOptionsSubmit}>
           <Card className="mb-6">
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-4">Payment Options</h2>
-              
+
               <div className="space-y-4">
                 <div>
                   <Label className="block mb-2">
                     Accept Payment In (select at least one)
                   </Label>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {cryptocurrencies.map((crypto) => (
+                    {CRYPTO_CURRENCIES.map((crypto) => (
                       <div key={crypto.id} className="flex items-center">
                         <input
                           type="checkbox"
                           id={`crypto-${crypto.id}`}
                           checked={selectedCryptocurrencies.includes(crypto.id)}
+                          disabled={crypto.id === "ETH"}
                           onChange={() => toggleCryptocurrency(crypto.id)}
                           className="mr-2"
                         />
-                        <Label htmlFor={`crypto-${crypto.id}`} className="cursor-pointer">
+                        <Label
+                          htmlFor={`crypto-${crypto.id}`}
+                          className="cursor-pointer"
+                        >
                           {crypto.name}
                         </Label>
                       </div>
                     ))}
                   </div>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="tokenLink">Token Link (Optional)</Label>
                   <Input
@@ -480,22 +659,18 @@ export default function EditEventPage() {
                     placeholder="https://..."
                   />
                   <p className="text-sm text-gray-500 mt-1">
-                    If you have a custom token, provide the contract address or link
+                    If you have a custom token, provide the contract address or
+                    link
                   </p>
                 </div>
               </div>
             </CardContent>
+            <div className="flex justify-end pr-6">
+              <Button type="submit" disabled={isSubmitting} className="px-6">
+                Update
+              </Button>
+            </div>
           </Card>
-          
-          <div className="flex justify-end">
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-6"
-            >
-              {isSubmitting ? "Updating Event..." : "Update Event"}
-            </Button>
-          </div>
         </form>
       </div>
     </main>

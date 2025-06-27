@@ -68,7 +68,7 @@ export function buildPaymentAndFeeds(
   const tokens: string[] = [];
   const feeds: string[] = [];
   selected.forEach((id) => {
-    if (id === "ETH") return;
+    if (id.toLowerCase() === "eth") return;
     const coin = allCryptos.find((c) => c.id === id);
     if (coin) {
       tokens.push(coin.address);

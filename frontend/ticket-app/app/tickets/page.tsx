@@ -296,6 +296,7 @@ export default function Page() {
           }}
           onPurchaseComplete={handlePurchaseComplete}
           updateAvailableTicket={updateAvailableTicket}
+          setSelected={setSelected}
         />
       )}
     </main>

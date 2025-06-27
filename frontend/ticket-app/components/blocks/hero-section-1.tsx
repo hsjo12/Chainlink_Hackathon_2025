@@ -414,6 +414,7 @@ const HeroHeader = () => {
   useEffect(() => {
     (async () => {
       const result = await checkOrganizer(address);
+
       setIsOrganizer(result);
     })();
   }, [address, isConnected]);

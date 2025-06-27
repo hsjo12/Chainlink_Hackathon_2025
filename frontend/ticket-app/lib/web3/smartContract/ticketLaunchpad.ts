@@ -1,31 +1,47 @@
 import TicketLaunchpad from "@/smartContracts/abis/TicketLaunchpad.json";
 import { getReadOnlyContract, getWriteContract } from "../provider";
-import { STANDARD, STANDING, VIP } from "@/constants/constants";
+import {
+  CRYPTO_CURRENCIES,
+  STANDARD,
+  STANDING,
+  VIP,
+} from "@/constants/constants";
 import { ethers } from "ethers";
 import { MintBatchSignatureParams, MintSignatureParams } from "@/types/params";
+import { TicketType, TierIds } from "@/types/types";
+import { buildPaymentAndFeeds } from "./buildCreatePairParams";
+import { buildTierValue } from "../utils";
+import { txMessage } from "@/lib/react-tostify/popup";
 
 export const getPriceTicket = async (
   launchpad: string,
   tier: string,
   paymentToken: string
 ) => {
-  if (!ethers.isAddress(launchpad) || !ethers.isAddress(paymentToken)) return 0;
+  try {
+    if (!ethers.isAddress(launchpad) || !ethers.isAddress(paymentToken))
+      return 0;
 
-  let tierType;
-  tier = tier.toLowerCase();
-  if (tier === "vip") tierType = VIP;
-  else if (tier === "standard") tierType = STANDARD;
-  else if (tier === "standing") tierType = STANDING;
-  else return 0;
+    let tierType;
+    tier = tier.toLowerCase();
+    if (tier === "vip") tierType = VIP;
+    else if (tier === "standard") tierType = STANDARD;
+    else if (tier === "standing") tierType = STANDING;
+    else return 0;
 
-  const ticketLaunchpad = await getReadOnlyContract(
-    launchpad,
-    TicketLaunchpad.abi
-  );
-  const price = await ticketLaunchpad.getPriceInToken(tierType, paymentToken);
-  // 1% slippage
-  const priceWithSlippage = price + (price * BigInt(100)) / BigInt(10_000);
-  return priceWithSlippage;
+    const ticketLaunchpad = await getReadOnlyContract(
+      launchpad,
+      TicketLaunchpad.abi
+    );
+
+    const price = await ticketLaunchpad.getPriceInToken(tierType, paymentToken);
+
+    // 1% slippage
+    const priceWithSlippage = price + (price * BigInt(100)) / BigInt(10_000);
+    return priceWithSlippage;
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 export const payWithETH = async (
@@ -45,7 +61,8 @@ export const payWithETH = async (
       [launchpad, to, seat, nonce, deadline, signature],
       { value: price }
     );
-    await tx.wait();
+    // Show Pop up message
+    await txMessage(tx);
   } catch (error) {
     console.log(error);
   }
@@ -56,23 +73,28 @@ export const payWithToken = async (
   paymentToken: string | undefined,
   params: MintSignatureParams
 ) => {
-  if (!paymentToken) throw new Error("Invalid payment token");
-  const { launchpad, to, seat, nonce, deadline, signature } = params;
-  const launchpadInstance = await getWriteContract(
-    launchpad,
-    TicketLaunchpad.abi,
-    walletProvider
-  );
+  try {
+    if (!paymentToken) throw new Error("Invalid payment token");
+    const { launchpad, to, seat, nonce, deadline, signature } = params;
+    const launchpadInstance = await getWriteContract(
+      launchpad,
+      TicketLaunchpad.abi,
+      walletProvider
+    );
 
-  const tx = await launchpadInstance.payWithToken(paymentToken, [
-    launchpad,
-    to,
-    seat,
-    nonce,
-    deadline,
-    signature,
-  ]);
-  await tx.wait();
+    const tx = await launchpadInstance.payWithToken(paymentToken, [
+      launchpad,
+      to,
+      seat,
+      nonce,
+      deadline,
+      signature,
+    ]);
+    // Show Pop up message
+    await txMessage(tx);
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 export const payBatchWithETH = async (
@@ -80,17 +102,23 @@ export const payBatchWithETH = async (
   params: MintBatchSignatureParams,
   price: number
 ) => {
-  const { launchpad, to, seats, nonce, deadline, signature } = params;
-  const launchpadInstance = await getWriteContract(
-    launchpad,
-    TicketLaunchpad.abi,
-    walletProvider
-  );
+  try {
+    const { launchpad, to, seats, nonce, deadline, signature } = params;
+    const launchpadInstance = await getWriteContract(
+      launchpad,
+      TicketLaunchpad.abi,
+      walletProvider
+    );
 
-  await launchpadInstance.payBatchWithETH(
-    [launchpad, to, seats, nonce, deadline, signature],
-    { value: price }
-  );
+    const tx = await launchpadInstance.payBatchWithETH(
+      [launchpad, to, seats, nonce, deadline, signature],
+      { value: price }
+    );
+    // Show Pop up message
+    await txMessage(tx);
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 export const payBatchWithToken = async (
@@ -98,37 +126,127 @@ export const payBatchWithToken = async (
   paymentToken: string | undefined,
   params: MintBatchSignatureParams
 ) => {
-  if (!paymentToken) throw new Error("Invalid payment token");
-  const { launchpad, to, seats, nonce, deadline, signature } = params;
-  const launchpadInstance = await getWriteContract(
-    launchpad,
-    TicketLaunchpad.abi,
-    walletProvider
-  );
+  try {
+    if (!paymentToken) throw new Error("Invalid payment token");
+    const { launchpad, to, seats, nonce, deadline, signature } = params;
+    const launchpadInstance = await getWriteContract(
+      launchpad,
+      TicketLaunchpad.abi,
+      walletProvider
+    );
 
-  await launchpadInstance.payBatchWithToken(paymentToken, [
-    launchpad,
-    to,
-    seats,
-    nonce,
-    deadline,
-    signature,
-  ]);
+    const tx = await launchpadInstance.payBatchWithToken(paymentToken, [
+      launchpad,
+      to,
+      seats,
+      nonce,
+      deadline,
+      signature,
+    ]);
+    // Show Pop up message
+    await txMessage(tx);
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 export const availableTicket = async (
   launchpad: string | undefined,
   tier: number
 ) => {
-  if (!launchpad) return [];
-  const launchpadInstance = await getReadOnlyContract(
-    launchpad,
-    TicketLaunchpad.abi
-  );
+  try {
+    if (!launchpad) return 0;
+    const launchpadInstance = await getReadOnlyContract(
+      launchpad,
+      TicketLaunchpad.abi
+    );
 
-  const [priceUSD, maxSupply, sold, hasSeatNumbers] =
-    await launchpadInstance.tierInfo(tier);
+    const [priceUSD, maxSupply, sold, hasSeatNumbers] =
+      await launchpadInstance.tierInfo(tier);
 
-  console.log(maxSupply - sold);
-  return maxSupply - sold;
+    return maxSupply - sold;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const totalSoldTicket = async (
+  launchpad: string | undefined,
+  tier: number
+) => {
+  try {
+    if (!launchpad) return 0;
+    const launchpadInstance = await getReadOnlyContract(
+      launchpad,
+      TicketLaunchpad.abi
+    );
+
+    const [, , sold] = await launchpadInstance.tierInfo(tier);
+
+    return sold;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const setTierMaxSupplyPrices = async (
+  launchpad: string | undefined,
+  walletProvider: any,
+  ticketTypes: TicketType[]
+) => {
+  try {
+    const tierIds: TierIds = [];
+    const maxSupplies: number[] = [];
+    const tierPricesUSD: number[] = [];
+
+    ticketTypes.forEach((v) => {
+      tierIds.push(buildTierValue(v.name));
+      maxSupplies.push(Number(v.quantity));
+      tierPricesUSD.push(Number(ethers.parseUnits(v.price, 8)));
+    });
+
+    if (!launchpad) return;
+    const launchpadInstance = await getWriteContract(
+      launchpad,
+      TicketLaunchpad.abi,
+      walletProvider
+    );
+
+    const tx = await launchpadInstance.setTierMaxSupplyPrices(
+      tierIds,
+      maxSupplies,
+      tierPricesUSD
+    );
+    // Show Pop up message
+    await txMessage(tx);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const setPaymentTokens = async (
+  launchpad: string | undefined,
+  walletProvider: any,
+  selectedCryptocurrencies: string[]
+) => {
+  try {
+    if (!launchpad) return;
+    const { paymentTokens, priceFeeds } = buildPaymentAndFeeds(
+      selectedCryptocurrencies,
+      CRYPTO_CURRENCIES
+    );
+    const launchpadInstance = await getWriteContract(
+      launchpad,
+      TicketLaunchpad.abi,
+      walletProvider
+    );
+    const tx = await launchpadInstance.setPaymentTokens(
+      paymentTokens,
+      priceFeeds
+    );
+    // Show Pop up message
+    await txMessage(tx);
+  } catch (error) {
+    console.log(error);
+  }
 };

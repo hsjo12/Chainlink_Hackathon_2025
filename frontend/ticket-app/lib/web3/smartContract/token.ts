@@ -1,3 +1,4 @@
+import { txApprove } from "@/lib/react-tostify/popup";
 import {
   getProvider,
   getReadOnlyContract,
@@ -5,21 +6,29 @@ import {
 } from "../provider";
 
 export const ethBalanceOf = async (owner: string | null | undefined) => {
-  if (!owner) return 0;
-  return await getProvider().getBalance(owner);
+  try {
+    if (!owner) return 0;
+    return await getProvider().getBalance(owner);
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 export const balanceOf = async (
   paymentToken: string | null | undefined,
   owner: string | null | undefined
 ) => {
-  if (!paymentToken || !owner) return 0;
+  try {
+    if (!paymentToken || !owner) return 0;
 
-  const token = await getReadOnlyContract(paymentToken, [
-    "function balanceOf(address owner) external view returns (uint256)",
-  ]);
+    const token = await getReadOnlyContract(paymentToken, [
+      "function balanceOf(address owner) external view returns (uint256)",
+    ]);
 
-  return await token.balanceOf(owner);
+    return await token.balanceOf(owner);
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 export const allowance = async (
@@ -27,13 +36,17 @@ export const allowance = async (
   owner: string | null | undefined,
   spender: string
 ) => {
-  if (!paymentToken || !owner) return 0;
+  try {
+    if (!paymentToken || !owner) return 0;
 
-  const token = await getReadOnlyContract(paymentToken, [
-    "function allowance(address owner, address spender) external view returns (uint256)",
-  ]);
+    const token = await getReadOnlyContract(paymentToken, [
+      "function allowance(address owner, address spender) external view returns (uint256)",
+    ]);
 
-  return await token.allowance(owner, spender);
+    return await token.allowance(owner, spender);
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 export const approve = async (
@@ -42,14 +55,20 @@ export const approve = async (
   amount: number,
   walletProvider: any
 ) => {
-  if (!paymentToken) return;
-  const token = await getWriteContract(
-    paymentToken,
-    [
-      "function approve(address spender, uint256 value) external returns (bool)",
-    ],
-    walletProvider
-  );
-  const tx = await token.approve(spender, amount);
-  await tx.wait();
+  try {
+    if (!paymentToken) return;
+    const token = await getWriteContract(
+      paymentToken,
+      [
+        "function approve(address spender, uint256 value) external returns (bool)",
+      ],
+      walletProvider
+    );
+    const tx = await token.approve(spender, amount);
+
+    // Show Pop up message
+    await txApprove(tx);
+  } catch (error) {
+    console.log(error);
+  }
 };
