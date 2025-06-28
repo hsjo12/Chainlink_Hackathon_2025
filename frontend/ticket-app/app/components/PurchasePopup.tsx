@@ -29,10 +29,10 @@ type PurchasePopupProps = {
   isOpen: boolean;
   onClose: () => void;
   ticketInfo: {
-    type: string;
+    name: string;
     price: string | number;
     eventName?: string;
-    cryptocurrencies?: string[];
+    paymentTokens?: string[];
     launchpad: string;
   };
   onPurchaseComplete: () => void;
@@ -40,8 +40,8 @@ type PurchasePopupProps = {
   setSelected: (type: null) => void;
 };
 
-const getPaymentTokensOptions = (cryptocurrencies: string[]) => {
-  return CRYPTO_CURRENCIES.filter((v) => cryptocurrencies.includes(v.id));
+const getPaymentTokensOptions = (paymentTokens: string[]) => {
+  return CRYPTO_CURRENCIES.filter((v) => paymentTokens.includes(v.id));
 };
 
 const formatUnits = (
@@ -85,14 +85,14 @@ export function PurchasePopup({
   const [reset, setReset] = useState(0);
 
   useEffect(() => {
-    const options = getPaymentTokensOptions(ticketInfo.cryptocurrencies || []);
+    const options = getPaymentTokensOptions(ticketInfo.paymentTokens || []);
     setPaymentOptions(options);
     setSelectedPaymentOption(options[0] || null);
 
     (async () => {
       const price = await getPriceTicket(
         ticketInfo.launchpad,
-        ticketInfo.type,
+        ticketInfo.name,
         options[0]?.address || ""
       );
 
@@ -123,7 +123,7 @@ export function PurchasePopup({
 
     const price = await getPriceTicket(
       ticketInfo.launchpad,
-      ticketInfo.type,
+      ticketInfo.name,
       selectedOption?.address || ""
     );
     setPriceInPaymentToken(price);
@@ -189,7 +189,7 @@ export function PurchasePopup({
         address || undefined,
         "", // currently no seat section
         "", // currently no seat number
-        ticketInfo.type
+        ticketInfo.name
       );
 
       // Purchase
@@ -208,7 +208,7 @@ export function PurchasePopup({
       }
 
       // update available ticket
-      await updateAvailableTicket(ticketInfo.type);
+      await updateAvailableTicket(ticketInfo.name);
       // update balance
       const tokenBalance = await getTokenBalance(
         address,
@@ -247,7 +247,7 @@ export function PurchasePopup({
         <div className="mb-6">
           <div className="bg-gray-50 p-4 rounded-lg mb-4">
             <p className="text-sm text-gray-500">Ticket Type</p>
-            <p className="font-medium">{ticketInfo.type}</p>
+            <p className="font-medium">{ticketInfo.name}</p>
 
             {ticketInfo.eventName && (
               <>
@@ -267,7 +267,7 @@ export function PurchasePopup({
               value={selectedPaymentOption?.id || ""}
               onChange={changePaymentOption}
             >
-              {getPaymentTokensOptions(ticketInfo.cryptocurrencies || []).map(
+              {getPaymentTokensOptions(ticketInfo.paymentTokens || []).map(
                 (opt) => (
                   <option key={opt.id} value={opt.id}>
                     {opt.name}

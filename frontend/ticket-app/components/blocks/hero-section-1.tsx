@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnimatedGroup } from "@/components/ui/animated-group";
-import { cn } from "@/lib/utils";
+import { cn, formatLocalDate } from "@/lib/utils";
 import {
   GridPatternCard,
   GridPatternCardBody,
@@ -21,6 +21,7 @@ import { MorphingText } from "../ui/liquid-text";
 import ConnectWallet from "@/app/components/ConnectWallet";
 import { checkOrganizer } from "@/lib/web3/smartContract/organizerRegistry";
 import { useAppKitAccount } from "@reown/appkit/react";
+import { fetchEvents } from "@/lib/db/utils/events";
 
 const transitionVariants = {
   item: {
@@ -42,35 +43,24 @@ const transitionVariants = {
   },
 };
 
-const defaultEvents = [
-  {
-    id: 1,
-    title: "Tech Conference 2025",
-    date: "June 20, 2025",
-    location: "San Francisco, CA",
-    summary:
-      "Explore the latest in technology and innovation at Tech Conference 2025.",
-  },
-  {
-    id: 2,
-    title: "Art & Design Expo",
-    date: "July 5, 2025",
-    location: "New York, NY",
-    summary:
-      "A gathering of creative minds showcasing the best in contemporary art and design.",
-  },
-  {
-    id: 3,
-    title: "Startup Pitch Night",
-    date: "August 15, 2025",
-    location: "Austin, TX",
-    summary:
-      "Watch startups pitch their ideas to investors in a high-energy evening of innovation.",
-  },
-];
-
 export function HeroSection() {
-  const [events, setEvents] = useState(defaultEvents);
+  const [events, setEvents] = useState([]);
+
+  useEffect(() => {
+    (async () => {
+      const events = await fetchEvents();
+
+      const formattedEvent = events.map((v: any) => ({
+        id: v.id,
+        title: v.title,
+        date: formatLocalDate(v.startDate),
+        location: v.location,
+        description: v.description,
+      }));
+
+      setEvents(formattedEvent);
+    })();
+  }, []);
 
   // Load events from localStorage on client-side
   useEffect(() => {
@@ -383,7 +373,7 @@ export function HeroSection() {
                   <MapPinIcon className="w-4 h-4 mr-1" />
                   {event.location}
                 </div>
-                <p className="text-gray-700 mb-4">{event.summary}</p>
+                <p className="text-gray-700 mb-4">{event.description}</p>
                 <div className="flex gap-2">
                   <Link href={`/tickets?eventId=${event.id}`}>
                     <Button>View Tickets</Button>

@@ -21,7 +21,7 @@ export type TicketType = {
   id: string;
   name: string;
   price: string;
-  quantity: string;
+  totalSupply: string;
 };
 
 export type PaymentTokenOption = {
@@ -37,3 +37,11 @@ export type Seat = [
   seatNumber: string, // Specific seat identifier within the section (e.g., "A1", "B12", "R5")
   tier: number // 0 : VIP , 1 : STANDARD, 2 : STANDING
 ];
+
+export type db_ticketType = {
+  name: string;
+  description: string | undefined;
+  price: number;
+  totalSupply: number;
+  typeValue: number;
+};

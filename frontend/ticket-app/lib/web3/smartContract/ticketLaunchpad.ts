@@ -201,7 +201,7 @@ export const setTierMaxSupplyPrices = async (
 
     ticketTypes.forEach((v) => {
       tierIds.push(buildTierValue(v.name));
-      maxSupplies.push(Number(v.quantity));
+      maxSupplies.push(Number(v.totalSupply));
       tierPricesUSD.push(Number(ethers.parseUnits(v.price, 8)));
     });
 

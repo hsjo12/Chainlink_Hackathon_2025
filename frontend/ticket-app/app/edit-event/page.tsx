@@ -21,13 +21,17 @@ import {
 } from "@/lib/web3/smartContract/ticketLaunchpad";
 import { getReadOnlyContract } from "@/lib/web3/provider";
 import { toastMessage } from "@/lib/react-tostify/popup";
+import { fetchEventById, updateEvents } from "@/lib/db/utils/events";
+import { dbCreateEventParams } from "@/types/params";
+import { formatDateForInput } from "@/lib/utils";
+import ImageUploadButton from "../components/ImageUploadField";
 
 // Define ticket type interface
 interface TicketType {
   id: string;
   name: string;
   price: string;
-  quantity: string;
+  totalSupply: string;
 }
 
 export default function EditEventPage() {
@@ -37,6 +41,7 @@ export default function EditEventPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const eventId = searchParams.get("eventId");
+  const [searchedEvent, setSearchedEvent] = useState<any>({});
 
   const [launchpad, setLaunchpad] = useState("");
   const [title, setTitle] = useState("");
@@ -46,167 +51,79 @@ export default function EditEventPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [dateError, setDateError] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [ticketTypes, setTicketTypes] = useState<TicketType[]>([
-    { id: "vip", name: "VIP", price: "", quantity: "" },
+    { id: "vip", name: "VIP", price: "", totalSupply: "" },
   ]);
   const [selectedCryptocurrencies, setSelectedCryptocurrencies] = useState<
     string[]
   >(["usd"]);
-  const [tokenLink, setTokenLink] = useState("");
+  const [externalUrl, setExternalUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [eventFound, setEventFound] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load event data when component mounts
   useEffect(() => {
-    if (eventId) {
-      // First check default events
-      const defaultEvents = [
-        {
-          id: 1,
-          title: "Tech Conference 2025",
-          date: "June 20, 2025",
-          location: "San Francisco, CA",
-          summary:
-            "Explore the latest in technology and innovation at Tech Conference 2025.",
-        },
-        {
-          id: 2,
-          title: "Art & Design Expo",
-          date: "July 5, 2025",
-          location: "New York, NY",
-          summary:
-            "A gathering of creative minds showcasing the best in contemporary art and design.",
-        },
-        {
-          id: 3,
-          title: "Startup Pitch Night",
-          date: "August 15, 2025",
-          location: "Austin, TX",
-          summary:
-            "Watch startups pitch their ideas to investors in a high-energy evening of innovation.",
-        },
-      ];
+    if (!eventId) {
+      toastMessage("Invalid Access", "error");
+      return router.push("/");
+    }
 
-      const foundDefaultEvent = defaultEvents.find(
-        (e) => e.id.toString() === eventId
-      );
+    let searchedEvent: dbCreateEventParams | null | undefined;
+    (async () => {
+      searchedEvent = await fetchEventById(eventId);
 
-      if (foundDefaultEvent) {
-        // Default events can't be edited, redirect to home
-        alert("Default events cannot be edited.");
-        router.push("/");
-        return;
+      if (!searchedEvent) {
+        toastMessage("Invalid Access", "error");
+        return router.push("/");
       }
+      setSearchedEvent(searchedEvent);
+      try {
+        // Populate form with event data
+        setTitle(searchedEvent.title || "");
+        setSymbol(searchedEvent.symbol || "");
+        setDescription(searchedEvent.description || "");
+        setLocation(searchedEvent.location || "");
+        setStartDate(formatDateForInput(searchedEvent.startDate) || "");
+        setEndDate(formatDateForInput(searchedEvent.endDate) || "");
+        setImagePreview(searchedEvent.imageUrl || null);
+        setLaunchpad(searchedEvent.launchpadAddress);
 
-      // Check localStorage for user-created events
-      const storedEvents = localStorage.getItem("events");
-      if (storedEvents) {
-        try {
-          const parsedEvents = JSON.parse(storedEvents);
-          const foundEvent = parsedEvents.find(
-            (e: any) => e.id.toString() === eventId
+        // Set ticket types
+        if (
+          searchedEvent.ticketTypes &&
+          Array.isArray(searchedEvent.ticketTypes)
+        ) {
+          const formattedTickets = searchedEvent.ticketTypes.map(
+            (ticket: any, index: number) => ({
+              id: ticket.id,
+              name: ticket.name || "",
+              price: ticket.price?.toString() || "",
+              totalSupply: ticket.totalSupply?.toString() || "",
+            })
           );
-
-          if (foundEvent) {
-            // Populate form with event data
-            setTitle(foundEvent.title || "");
-            setSymbol(foundEvent.symbol || "");
-            setDescription(foundEvent.summary || "");
-            setLocation(foundEvent.location || "");
-            setStartDate(foundEvent.startDate || "");
-            setEndDate(foundEvent.endDate || "");
-            setImagePreview(foundEvent.image || null);
-            setLaunchpad(foundEvent.launchpadAddress);
-            // Format date if it's not in YYYY-MM-DD format
-            if (
-              foundEvent.date &&
-              !foundEvent.date.match(/^\d{4}-\d{2}-\d{2}$/)
-            ) {
-              try {
-                const dateObj = new Date(foundEvent.date);
-                const formattedDate = dateObj.toISOString().split("T")[0];
-                // setDate(formattedDate);
-              } catch (error) {
-                console.error("Error formatting date:", error);
-              }
-            }
-
-            // Set ticket types
-            if (foundEvent.tickets && Array.isArray(foundEvent.tickets)) {
-              const formattedTickets = foundEvent.tickets.map(
-                (ticket: any, index: number) => ({
-                  id: `ticket-${index + 1}`,
-                  name: ticket.type || "",
-                  price: ticket.price?.toString() || "",
-                  quantity: ticket.quantity?.toString() || "",
-                })
-              );
-              setTicketTypes(
-                formattedTickets.length > 0
-                  ? formattedTickets
-                  : [
-                      {
-                        id: "regular",
-                        name: "Regular",
-                        price: "",
-                        quantity: "",
-                      },
-                    ]
-              );
-            }
-
-            // Set cryptocurrencies
-            if (
-              foundEvent.cryptocurrencies &&
-              Array.isArray(foundEvent.cryptocurrencies)
-            ) {
-              setSelectedCryptocurrencies(foundEvent.cryptocurrencies);
-            }
-
-            // Set token link
-            if (foundEvent.tokenLink) {
-              setTokenLink(foundEvent.tokenLink);
-            }
-
-            setEventFound(true);
-          } else {
-            // Event not found, redirect to home
-            alert("Event not found.");
-            router.push("/");
-          }
-        } catch (error) {
-          console.error("Error parsing stored events:", error);
-          alert("Error loading event data.");
-          router.push("/");
+          if (formattedTickets.length < 1) return;
+          setTicketTypes(formattedTickets);
         }
-      } else {
-        // No events in localStorage, redirect to home
-        alert("No events found.");
-        router.push("/");
-      }
-    } else {
-      // No eventId provided, redirect to home
-      router.push("/");
-    }
+
+        // Set paymentTokens
+        if (
+          searchedEvent.paymentTokens &&
+          Array.isArray(searchedEvent.paymentTokens)
+        ) {
+          setSelectedCryptocurrencies(searchedEvent.paymentTokens);
+        }
+
+        // Set External Url
+        if (searchedEvent.externalUrl) {
+          setExternalUrl(searchedEvent.externalUrl);
+        }
+
+        setEventFound(true);
+      } catch (error) {}
+    })();
   }, [eventId, router]);
-
-  // Handle image upload
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setImageFile(file);
-
-      // Create preview URL
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   // Update ticket type details
   const updateTicketType = async (
@@ -221,13 +138,13 @@ export default function EditEventPage() {
       )
     );
 
-    if (field === "quantity") {
+    if (field === "totalSupply") {
       let soldCount = await totalSoldTicket(launchpad, buildTierValue(name));
       if (Number(soldCount) > Number(value)) {
         setTicketTypes((prev) =>
           prev.map((ticket) =>
             ticket.id === id
-              ? { ...ticket, quantity: String(Number(soldCount)) }
+              ? { ...ticket, totalSupply: String(Number(soldCount)) }
               : ticket
           )
         );
@@ -281,28 +198,23 @@ export default function EditEventPage() {
     try {
       e.preventDefault();
       setIsSubmitting(true);
-      const storedEvents = JSON.parse(localStorage.getItem("events") || "[]");
-      const foundEvent = storedEvents.find(
-        (e: any) => e.id.toString() === eventId
-      );
-
-      // Localstorage update
-      Object.assign(foundEvent, {
+      if (!eventId) return toastMessage("Please refresh the page", "warn");
+      const exURL = externalUrl === "" ? undefined : externalUrl;
+      await updateEvents(eventId, "eventDetails", {
         title,
         symbol,
-        image: imagePreview || "",
-        summary: description,
+        description,
+        imageUrl: imagePreview, // In a real app, this would be a URL to the uploaded image
+        bannerUrl: undefined, // currently no banner function ""
+        externalUrl: exURL, // currently no externalURL
+        category: "General", // currently no category, so just "General"
+        startDate: new Date(startDate).toISOString(),
+        endDate: new Date(endDate).toISOString(),
         location,
-        startDate,
-        endDate,
       });
-      const updatedEvents = storedEvents.map((ev: any) =>
-        ev.id.toString() === eventId ? foundEvent : ev
-      );
-      localStorage.setItem("events", JSON.stringify(updatedEvents));
 
       // Interact with smart contract
-      await setEventDetails(foundEvent.ticketAddress, walletProvider, [
+      await setEventDetails(searchedEvent?.ticketAddress, walletProvider, [
         title,
         symbol,
         imagePreview || "",
@@ -324,29 +236,13 @@ export default function EditEventPage() {
       e.preventDefault();
       setIsSubmitting(true);
 
-      const storedEvents = JSON.parse(localStorage.getItem("events") || "[]");
-      const foundEvent = storedEvents.find(
-        (e: any) => e.id.toString() === eventId
-      );
-
-      // Localstorage update
-      Object.assign(foundEvent, {
-        tickets: ticketTypes.map((ticket) => ({
-          type: ticket.name,
-          price: parseFloat(ticket.price),
-          quantity: parseInt(ticket.quantity),
-          typeValue: buildTierValue(ticket.name),
-        })),
+      if (!eventId) return toastMessage("Please refresh the page", "warn");
+      await updateEvents(eventId, "ticketTypes", {
+        ticketTypes,
       });
-      const updatedEvents = storedEvents.map((ev: any) =>
-        ev.id.toString() === eventId ? foundEvent : ev
-      );
-      localStorage.setItem("events", JSON.stringify(updatedEvents));
 
       // Interact with smart contract
       await setTierMaxSupplyPrices(launchpad, walletProvider, ticketTypes);
-
-      return;
     } catch (error) {
       console.error("Error updating event:", error);
     } finally {
@@ -360,20 +256,10 @@ export default function EditEventPage() {
       e.preventDefault();
       setIsSubmitting(true);
 
-      const storedEvents = JSON.parse(localStorage.getItem("events") || "[]");
-      const foundEvent = storedEvents.find(
-        (e: any) => e.id.toString() === eventId
-      );
-
-      // Localstorage update
-      Object.assign(foundEvent, {
-        cryptocurrencies: selectedCryptocurrencies,
-        tokenLink: tokenLink || null,
+      if (!eventId) return toastMessage("Please refresh the page", "warn");
+      await updateEvents(eventId, "paymentOptions", {
+        paymentTokens: selectedCryptocurrencies,
       });
-      const updatedEvents = storedEvents.map((ev: any) =>
-        ev.id.toString() === eventId ? foundEvent : ev
-      );
-      localStorage.setItem("events", JSON.stringify(updatedEvents));
 
       // Interact with smart contract
       await setPaymentTokens(
@@ -503,23 +389,14 @@ export default function EditEventPage() {
                 <div>
                   <Label htmlFor="image">Event Image</Label>
                   <div className="mt-1 flex items-center">
-                    <input
-                      type="file"
-                      id="image"
-                      ref={fileInputRef}
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                    <Button
+                    <ImageUploadButton
                       type="button"
                       variant="outline"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="flex items-center"
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      {imagePreview ? "Change Image" : "Upload Image"}
-                    </Button>
+                      size="default"
+                      text={imagePreview ? "Change Image" : "Upload Image"}
+                      setImagePreview={setImagePreview}
+                    />
+
                     {imagePreview && (
                       <div className="ml-4">
                         <img
@@ -531,6 +408,19 @@ export default function EditEventPage() {
                     )}
                   </div>
                 </div>
+              </div>
+              <div>
+                <Label htmlFor="externalUrl">External URL (Optional)</Label>
+                <Input
+                  id="externalUrl"
+                  value={externalUrl}
+                  onChange={(e) => setExternalUrl(e.target.value)}
+                  placeholder="https://..."
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  If you would like to share more details, you can add them
+                  here.
+                </p>
               </div>
             </CardContent>
             <div className="flex justify-end pr-6">
@@ -586,18 +476,18 @@ export default function EditEventPage() {
                       </div>
 
                       <div>
-                        <Label htmlFor={`${ticket.id}-quantity`}>
+                        <Label htmlFor={`${ticket.id}-totalSupply`}>
                           Quantity
                         </Label>
                         <Input
-                          id={`${ticket.id}-quantity`}
+                          id={`${ticket.id}-totalSupply`}
                           type="number"
                           min="1"
-                          value={ticket.quantity}
+                          value={ticket.totalSupply}
                           onChange={(e) =>
                             updateTicketType(
                               ticket.id,
-                              "quantity",
+                              "totalSupply",
                               e.target.value,
                               ticket.name
                             )
@@ -648,20 +538,6 @@ export default function EditEventPage() {
                       </div>
                     ))}
                   </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="tokenLink">Token Link (Optional)</Label>
-                  <Input
-                    id="tokenLink"
-                    value={tokenLink}
-                    onChange={(e) => setTokenLink(e.target.value)}
-                    placeholder="https://..."
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    If you have a custom token, provide the contract address or
-                    link
-                  </p>
                 </div>
               </div>
             </CardContent>

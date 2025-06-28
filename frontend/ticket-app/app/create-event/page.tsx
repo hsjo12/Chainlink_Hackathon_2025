@@ -15,13 +15,11 @@ import { buildTierValue, checkConnection } from "@/lib/web3/utils";
 import { createTicketPair } from "@/lib/web3/smartContract/ticketFactory";
 import { TicketType } from "@/types/types";
 import { buildCreatePairParams } from "@/lib/web3/smartContract/buildCreatePairParams";
-import {
-  CRYPTO_CURRENCIES,
-  STANDARD,
-  STANDING,
-  VIP,
-} from "@/constants/constants";
+import { CRYPTO_CURRENCIES } from "@/constants/constants";
 import { checkOrganizer } from "@/lib/web3/smartContract/organizerRegistry";
+import ImageUploadButton from "../components/ImageUploadField";
+import { storeNewEvent } from "@/lib/db/utils/events";
+import { ethers } from "ethers";
 
 // Define Ticket type
 const ticketOptions = ["VIP", "STANDARD", "STANDING"];
@@ -29,7 +27,6 @@ const ticketOptions = ["VIP", "STANDARD", "STANDING"];
 export default function CreateEventPage() {
   const { address, isConnected } = useAppKitAccount();
   const { walletProvider } = useAppKitProvider("eip155");
-
   const router = useRouter();
   const ticketIdCounter = useRef(1);
   const [title, setTitle] = useState("");
@@ -47,7 +44,7 @@ export default function CreateEventPage() {
   const [selectedCryptocurrencies, setSelectedCryptocurrencies] = useState<
     string[]
   >(["ETH"]);
-  const [tokenLink, setTokenLink] = useState("");
+  const [externalUrl, setExternalUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -172,18 +169,13 @@ export default function CreateEventPage() {
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
+    if (!imagePreview) return toastMessage("Please add image", "warn");
+    setIsSubmitting(true);
+    const exURL = externalUrl === "" ? undefined : externalUrl;
     try {
       // Check if a wallet is connected
       checkConnection(isConnected);
-
-      // In a real application, you would upload the image to a server
-      // and save the event data to a database or blockchain
-
-      // For this demo, we'll simulate a successful submission
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
       // Generate params for the createTicketPair function
       const params = buildCreatePairParams(
         title,
@@ -198,49 +190,42 @@ export default function CreateEventPage() {
         selectedCryptocurrencies,
         CRYPTO_CURRENCIES
       );
-
       // Interact with the createTicketPair function
       const result = await createTicketPair(walletProvider, params);
       if (!result) throw new Error("Transaction failed");
 
       // Return addresses and should store these into DB.
       const { ticket, ticketLaunchpad, market } = result;
-      console.log(`ticket address : ${ticket}`);
-      console.log(`ticketLaunchpad address : ${ticketLaunchpad}`);
-      console.log(`market address : ${market} - mock market address`);
 
-      // Create a new event object
+      // Interact With DB
       const newEvent = {
-        id: Date.now(), // Generate a unique ID
         title,
         symbol,
-        startDate,
-        endDate,
+        description,
+        imageUrl: imagePreview, // In a real app, this would be a URL to the uploaded image
+        bannerUrl: undefined, // currently no banner function ""
+        externalUrl: exURL, // currently no externalURL
+        category: "General", // currently no category, so just "General"
+        startDate: new Date(startDate).toISOString(),
+        endDate: new Date(endDate).toISOString(),
         location,
-        summary: description,
-        image: imagePreview, // In a real app, this would be a URL to the uploaded image
-        tickets: ticketTypes.map((ticket) => ({
-          type: ticket.name,
+        ticketTypes: ticketTypes.map((ticket) => ({
+          name: ticket.name,
+          description: ticket.name, // currently no description filed, so just ticket.name
           price: parseFloat(ticket.price),
-          quantity: parseInt(ticket.quantity),
+          totalSupply: parseInt(ticket.quantity),
           typeValue: buildTierValue(ticket.name),
         })),
-        cryptocurrencies: selectedCryptocurrencies,
-        tokenLink: tokenLink || null,
-        ticketAddress: ticket,
-        launchpadAddress: ticketLaunchpad,
-        marketAddress: market,
+        paymentTokens: selectedCryptocurrencies,
+        organizerAddress: address || "",
+        ticketAddress: ticket || ethers.ZeroAddress,
+        launchpadAddress: ticketLaunchpad || ethers.ZeroAddress,
+        marketAddress: market || ethers.ZeroAddress,
+        platformFeePercent: 2.5,
+        royaltyFeePercent: 0.1,
       };
 
-      // In a real application, you would save this to a database or blockchain
-      console.log("New event created:", newEvent);
-
-      // For demo purposes, we'll store it in localStorage to display on the home page
-      const existingEvents = JSON.parse(localStorage.getItem("events") || "[]");
-      localStorage.setItem(
-        "events",
-        JSON.stringify([...existingEvents, newEvent])
-      );
+      await storeNewEvent(newEvent);
 
       // Navigate to the home page
       router.push("/");
@@ -353,15 +338,15 @@ export default function CreateEventPage() {
                       onChange={handleImageUpload}
                       className="hidden"
                     />
-                    <Button
+
+                    <ImageUploadButton
                       type="button"
                       variant="outline"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="flex items-center"
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      Upload Image
-                    </Button>
+                      size="default"
+                      text={imagePreview ? "Change Image" : "Upload Image"}
+                      setImagePreview={setImagePreview}
+                    />
+
                     {imagePreview && (
                       <div className="ml-4">
                         <img
@@ -372,6 +357,19 @@ export default function CreateEventPage() {
                       </div>
                     )}
                   </div>
+                </div>
+                <div>
+                  <Label htmlFor="externalUrl">External Link (Optional)</Label>
+                  <Input
+                    id="externalUrl"
+                    value={externalUrl}
+                    onChange={(e) => setExternalUrl(e.target.value)}
+                    placeholder="https://..."
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    If you would like to share more details, you can add them
+                    here.
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -503,20 +501,6 @@ export default function CreateEventPage() {
                       </div>
                     ))}
                   </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="tokenLink">Token Link (Optional)</Label>
-                  <Input
-                    id="tokenLink"
-                    value={tokenLink}
-                    onChange={(e) => setTokenLink(e.target.value)}
-                    placeholder="https://..."
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    If you have a custom token, provide the contract address or
-                    link
-                  </p>
                 </div>
               </div>
             </CardContent>

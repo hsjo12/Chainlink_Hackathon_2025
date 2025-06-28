@@ -3,12 +3,16 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PurchasePopup } from "@/app/components/PurchasePopup";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import ConnectWallet from "../components/ConnectWallet";
 import { buildTierValue } from "@/lib/web3/utils";
 import { availableTicket } from "@/lib/web3/smartContract/ticketLaunchpad";
+import { toastMessage } from "@/lib/react-tostify/popup";
+import { dbCreateEventParams } from "@/types/params";
+import { fetchEventById } from "@/lib/db/utils/events";
+import { ethers } from "ethers";
 
 // Default ticket benefits to use if not provided
 const defaultBenefits = {
@@ -21,85 +25,15 @@ const defaultBenefits = {
 
 type Ticket = {
   id: number;
-  type: string;
+  name: string;
   price: number | string;
   benefits?: string;
-  quantity?: number;
+  totalSupply?: number;
+  typeValue: number;
 };
 
-// Default events with tickets for the sample events
-const defaultEvents = [
-  {
-    id: 1,
-    title: "Tech Conference 2025",
-    tickets: [
-      {
-        id: 1,
-        type: "General Admission",
-        price: 49,
-        benefits: "Access to all general sessions and expo hall.",
-        quantity: 200,
-      },
-      {
-        id: 2,
-        type: "VIP Pass",
-        price: 129,
-        benefits: "Includes front-row seating and speaker meet & greet.",
-        quantity: 50,
-      },
-      {
-        id: 3,
-        type: "Online Access",
-        price: 19,
-        benefits: "Livestream access to all main sessions.",
-        quantity: 500,
-      },
-    ],
-  },
-  {
-    id: 2,
-    title: "Art & Design Expo",
-    tickets: [
-      {
-        id: 1,
-        type: "Regular Entry",
-        price: 35,
-        benefits: "Access to all exhibition areas.",
-        quantity: 300,
-      },
-      {
-        id: 2,
-        type: "Premium Pass",
-        price: 85,
-        benefits: "Includes workshop access and exhibition catalog.",
-        quantity: 100,
-      },
-    ],
-  },
-  {
-    id: 3,
-    title: "Startup Pitch Night",
-    tickets: [
-      {
-        id: 1,
-        type: "Attendee",
-        price: 25,
-        benefits: "Watch startup pitches and network with entrepreneurs.",
-        quantity: 150,
-      },
-      {
-        id: 2,
-        type: "Investor Pass",
-        price: 150,
-        benefits:
-          "Premium seating, exclusive networking reception, and pitch deck access.",
-        quantity: 30,
-      },
-    ],
-  },
-];
-
 export default function Page() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const eventId = searchParams.get("eventId");
 
@@ -110,73 +44,49 @@ export default function Page() {
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
 
   useEffect(() => {
-    // Find the event by ID
-    if (eventId) {
-      // First check default events
-      const foundDefaultEvent = defaultEvents.find(
-        (e) => e.id.toString() === eventId
-      );
+    if (!eventId) {
+      toastMessage("Invalid Access", "error");
+      void router.push("/");
+      return;
+    }
 
-      if (foundDefaultEvent) {
-        setEvent(foundDefaultEvent);
-        setTickets(foundDefaultEvent.tickets);
+    (async () => {
+      const searchedEvent = await fetchEventById(eventId);
+      console.log(searchedEvent);
+      if (!searchedEvent) {
+        toastMessage("Invalid Access", "error");
+        void router.push("/");
         return;
       }
+      setEvent(searchedEvent);
+      const formattedTickets = await Promise.all(
+        searchedEvent.ticketTypes.map(async (ticket: Ticket, index: any) => {
+          const benefits =
+            defaultBenefits[ticket.name as keyof typeof defaultBenefits] ||
+            `Access to ${searchedEvent.title || ""}`;
 
-      // If not found in default events, check localStorage
-      const storedEvents = localStorage.getItem("events");
-      if (storedEvents) {
-        try {
-          const parsedEvents = JSON.parse(storedEvents);
-          const foundEvent = parsedEvents.find(
-            (e: any) => e.id.toString() === eventId
+          const totalSupply = await availableTicket(
+            searchedEvent.launchpadAddress || ethers.ZeroAddress,
+            ticket.typeValue
           );
 
-          if (foundEvent) {
-            setEvent(foundEvent);
-            // Format tickets to match our Ticket type
-            if (foundEvent.tickets && Array.isArray(foundEvent.tickets)) {
-              (async () => {
-                const formattedTickets = await Promise.all(
-                  foundEvent.tickets.map(async (ticket: any, index: number) => {
-                    const benefits =
-                      defaultBenefits[
-                        ticket.type as keyof typeof defaultBenefits
-                      ] || `Access to ${foundEvent.title}`;
-
-                    // fetch remaining quantity
-                    const quantity = await availableTicket(
-                      foundEvent.launchpadAddress,
-                      ticket.typeValue
-                    );
-                    return {
-                      id: index + 1,
-                      type: ticket.type,
-                      price: ticket.price,
-                      benefits,
-                      quantity,
-                    };
-                  })
-                );
-
-                setTickets(formattedTickets);
-              })();
-            }
-          }
-        } catch (error) {
-          console.error("Error parsing stored events:", error);
-        }
-      }
-    } else {
-      // If no eventId is provided, show tickets for the first default event
-      setEvent(defaultEvents[0]);
-      setTickets(defaultEvents[0].tickets);
-    }
-  }, [eventId]);
+          return {
+            id: index + 1,
+            name: ticket.name,
+            price: ticket.price,
+            benefits,
+            totalSupply,
+          };
+        })
+      );
+      console.log(formattedTickets);
+      setTickets(formattedTickets);
+    })();
+  }, [eventId, router]);
 
   const updateAvailableTicket = async (type: string) => {
     const ticketTypeValue = buildTierValue(type);
-    const quantity = await availableTicket(
+    const totalSupply = await availableTicket(
       event.launchpadAddress,
       ticketTypeValue
     );
@@ -184,14 +94,15 @@ export default function Page() {
     setTickets((prevTickets) =>
       prevTickets.map(
         (t) =>
-          t.type === type
-            ? ({ ...t, quantity } as Ticket) // update only this ticket
+          t.name === type
+            ? ({ ...t, totalSupply } as Ticket) // update only this ticket
             : t // leave all others untouched
       )
     );
   };
 
   const handlePurchase = (ticket: Ticket) => {
+    console.log(ticket);
     setSelected(ticket);
     setIsPurchasePopupOpen(true);
   };
@@ -206,10 +117,7 @@ export default function Page() {
 
   // Format price for display
   const formatPrice = (price: number | string): string => {
-    if (typeof price === "number") {
-      return `$${price}`;
-    }
-    return price.toString();
+    return `$${price}`;
   };
 
   return (
@@ -254,14 +162,14 @@ export default function Page() {
               }`}
             >
               <CardContent className="p-6 flex flex-col items-center text-center">
-                <h2 className="text-xl font-semibold mb-2">{ticket.type}</h2>
+                <h2 className="text-xl font-semibold mb-2">{ticket.name}</h2>
                 <p className="text-2xl font-bold text-blue-600 mb-2">
                   {formatPrice(ticket.price)}
                 </p>
                 <p className="text-gray-600 mb-2">{ticket.benefits}</p>
-                {ticket.quantity && (
+                {ticket.totalSupply && (
                   <p className="text-sm text-gray-500 mb-4">
-                    {ticket.quantity} tickets available
+                    {ticket.totalSupply} tickets available
                   </p>
                 )}
                 <Button
@@ -288,10 +196,10 @@ export default function Page() {
           isOpen={isPurchasePopupOpen}
           onClose={() => setIsPurchasePopupOpen(false)}
           ticketInfo={{
-            type: selected.type,
+            name: selected.name,
             price: formatPrice(selected.price),
             eventName: event?.title,
-            cryptocurrencies: event.cryptocurrencies,
+            paymentTokens: event.paymentTokens,
             launchpad: event.launchpadAddress,
           }}
           onPurchaseComplete={handlePurchaseComplete}

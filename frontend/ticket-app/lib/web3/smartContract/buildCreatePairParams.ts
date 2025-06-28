@@ -51,7 +51,7 @@ export function buildImageURIs(
 export function buildTierInfoList(ticketTypes: TicketType[]): TierInfo[] {
   return ticketTypes.map((ticket) => [
     ethers.parseUnits(String(parseInt(ticket.price)), 8),
-    parseInt(ticket.quantity),
+    parseInt(ticket.totalSupply),
     0,
     false, // currently no seat number option, so false
   ]);

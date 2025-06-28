@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id          String  @id @default(cuid())
+  title       String
+  symbol      String
+  description String
+  imageUrl    String?
+  bannerUrl   String?
+  category    String // "concert", "sports", "theater", "conference", etc.
+  location    String // Venue name or address
+
+  // Event details
+  startDate     DateTime
+  endDate       DateTime
+  paymentTokens String[] @default(["ETH"])
+  externalUrl   String?
+
+  // Organizer
+  organizerAddress String // Wallet address of the organizer
+  ticketAddress    String // Deployed ticket NFT contract address
+  launchpadAddress String // Launchpad contract address 
+  marketAddress    String // Market contract address for secondary sales
+
+  // Fee structure
+  platformFeePercent Decimal @default(2.5) // Platform fee percentage
+  royaltyFeePercent  Decimal @default(0.1) // Organizer royalty on resales
+
+  // Tickets for this event
+  ticketTypes  TicketType[]
+  validations  TicketValidation[]
+  maxPerWallet Int                @default(4)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("events")
+}
+
+model TicketType {
+  id      String @id @default(cuid())
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  name        String // "General Admission", "VIP", "Early Bird", etc.
+  description String?
+  price       Decimal // Base price in the selected currency
+  typeValue   Int // Value for Type name
+
+  // Supply details
+  totalSupply       Int // Total number of tickets available
+  ticketvalidations TicketValidation[]
+
+  @@map("ticket_types")
+}
+
+model TicketValidation {
+  id              String     @id @default(cuid())
+  contractAddress String //NFT contract address
+  tokenId         String     @unique //NFT token ID
+  eventId         String
+  event           Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ticketTypeId    String
+  ticketType      TicketType @relation(fields: [ticketTypeId], references: [id], onDelete: Cascade)
+
+  // Validation details
+  isUsed      Boolean   @default(false)
+  usedAt      DateTime?
+  validatedBy String? // Staff member ID or name
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("ticket_validations")
+}
+
+// Event indexes  
+// @@index([organizerId], map: "idx_events_organizer")
+// @@index([status], map: "idx_events_status")
+// @@index([startDate], map: "idx_events_start_date")
+// @@index([category], map: "idx_events_category")
+
+// Ticket indexes
+// @@index([ownerId], map: "idx_tickets_owner") 
+// @@index([eventId], map: "idx_tickets_event")
+// @@index([status], map: "idx_tickets_status")
+// @@index([tokenId], map: "idx_tickets_token_id")
+// @@index([ticketTypeId], map: "idx_tickets_ticket_type")
+// @@index([ticketValidationId], map: "idx_tickets_validation")
+
+// Transaction indexes
+// @@index([buyerId], map: "idx_transactions_buyer")
+// @@index([sellerId], map: "idx_transactions_seller") 
+// @@index([ticketId], map: "idx_transactions_ticket")
+// @@index([status], map: "idx_transactions_status")
+// @@index([transactionHash], map: "idx_transactions_hash")`
