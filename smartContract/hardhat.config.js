@@ -22,7 +22,7 @@ module.exports = {
   networks: {
     hardhat: {
       forking: {
-        url: `https://eth-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_RPC_KEY}`,
+        url: `https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_RPC_KEY}`,
       },
     },
 
