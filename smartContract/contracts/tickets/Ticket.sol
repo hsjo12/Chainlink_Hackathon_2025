@@ -66,6 +66,7 @@ contract Ticket is
         initializerERC721A
         onlyValidTime(eventDetails_.startTime, eventDetails_.endTime)
     {
+            
         __ERC721A_init(eventDetails_.name, eventDetails_.symbol);
         __ERC721ABurnable_init();
         __Ownable_init(owner_);
@@ -134,6 +135,7 @@ contract Ticket is
         onlyOwner
         onlyValidTime(eventDetails_.startTime, eventDetails_.endTime)
     {
+            
         _eventDetails = eventDetails_;
     }
 

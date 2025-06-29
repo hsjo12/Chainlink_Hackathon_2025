@@ -56,5 +56,5 @@ abstract contract UUPSAccessControl is
 
     function _authorizeUpgrade(
         address newImplementation
-    ) internal override onlyRole(UPGRADER) {}
+    ) internal virtual override onlyRole(UPGRADER) {}
 }

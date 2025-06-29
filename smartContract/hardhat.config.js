@@ -6,10 +6,10 @@ module.exports = {
   solidity: {
     version: "0.8.30",
     settings: {
-      viaIR: true,
+      viaIR: true,  
       optimizer: {
         enabled: true,
-        runs: 10_000_000,
+        runs: 200,
         details: {
           yulDetails: {
             optimizerSteps: "u",
