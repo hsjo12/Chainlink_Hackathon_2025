@@ -60,44 +60,6 @@ export async function PUT(
       });
     }
     return NextResponse.json({ res });
-    // const parsedData = updateEventSchema.parse(body);
-
-    // // Update the event
-    // const event = await prisma.event.update({
-    //   where: { id: params.id },
-    //   data: {
-    //     title: parsedData.title,
-    //     symbol: parsedData.symbol,
-    //     description: parsedData.description,
-    //     imageUrl: parsedData.imageUrl,
-    //     bannerUrl: parsedData.bannerUrl,
-    //     category: parsedData.category,
-    //     location: parsedData.location,
-    //     startDate: new Date(parsedData.startDate),
-    //     endDate: new Date(parsedData.endDate),
-    //     paymentTokens: parsedData.paymentTokens,
-    //     organizerAddress: parsedData.organizerAddress,
-    //     ticketAddress: parsedData.ticketAddress,
-    //     launchpadAddress: parsedData.launchpadAddress,
-    //     marketAddress: parsedData.marketAddress,
-    //     platformFeePercent: parsedData.platformFeePercent,
-    //     royaltyFeePercent: parsedData.royaltyFeePercent,
-    //     externalUrl: parsedData.externalUrl,
-    //     // Handle ticket types
-    //     ticketTypes: {
-    //       deleteMany: {}, // Delete existing ticket types
-    //       create: parsedData.ticketTypes
-    //         ? parsedData.ticketTypes.map((ticketType) => ({
-    //             name: ticketType.name,
-    //             description: ticketType.description,
-    //             price: ticketType.price,
-    //             totalSupply: ticketType.totalSupply,
-    //             typeValue: ticketType.typeValue,
-    //           }))
-    //         : [],
-    //     },
-    //   },
-    //});
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors }, { status: 400 });

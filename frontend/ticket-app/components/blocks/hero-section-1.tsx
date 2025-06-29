@@ -16,7 +16,6 @@ import {
   GridPatternCard,
   GridPatternCardBody,
 } from "../ui/card-with-grid-ellipsis-pattern";
-import { HandWrittenTitle } from "../ui/hand-writing-text";
 import { MorphingText } from "../ui/liquid-text";
 import ConnectWallet from "@/app/components/ConnectWallet";
 import { checkOrganizer } from "@/lib/web3/smartContract/organizerRegistry";
@@ -42,7 +41,10 @@ const transitionVariants = {
     },
   },
 };
-
+type MenuItem = {
+  name: string;
+  href: string;
+};
 export function HeroSection() {
   const [events, setEvents] = useState<any[]>([]);
 
@@ -61,7 +63,6 @@ export function HeroSection() {
       setEvents(formattedEvent);
     })();
   }, []);
-
 
   const texts = [
     "Explore Events",
@@ -380,23 +381,64 @@ export function HeroSection() {
   );
 }
 
-const menuItems = [
-  { name: "Home", href: "/" },
-  { name: "Marketplace", href: "/marketplace" },
-  { name: "Dashboard", href: "/dashbaord" },
-  { name: "Create Event", href: "/create-event" },
-];
-
-
-
 export const HeroHeader = () => {
-  const { address, isConnected } = useAppKitAccount();
-  const [isOrganizer, setIsOrganizer] = useState(false);
-  useEffect(() => {
-    (async () => {
-      const result = await checkOrganizer(address);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([
+    { name: "Home", href: "/" },
+    { name: "Marketplace", href: "/marketplace" },
+    {
+      name: "Become Organizer",
+      href: "https://docs.google.com/forms/d/e/1FAIpQLSfRjkF8eUU7XqYd-B81oxtb3kVXSJhKihdmzGZ1k5at21swDg/viewform?usp=sharing&ouid=116351869150649390284",
+    },
+  ]);
 
-      setIsOrganizer(result);
+  const { address, isConnected } = useAppKitAccount();
+
+  useEffect(() => {
+    if (!address || !isConnected) {
+      setMenuItems([
+        { name: "Home", href: "/" },
+        { name: "Marketplace", href: "/marketplace" },
+        {
+          name: "Become Organizer",
+          href: "https://docs.google.com/forms/d/e/1FAIpQLSfRjkF8eUU7XqYd-B81oxtb3kVXSJhKihdmzGZ1k5at21swDg/viewform?usp=sharing&ouid=116351869150649390284",
+        },
+      ]);
+      return;
+    }
+
+    (async () => {
+      try {
+        const isOrganizer = await checkOrganizer(address);
+
+        const baseMenu: MenuItem[] = [
+          { name: "Home", href: "/" },
+          { name: "Marketplace", href: "/marketplace" },
+          {
+            name: "Dashboard",
+            href: `/dashboard?address=${encodeURIComponent(address)}`,
+          },
+        ];
+
+        // if organizer
+        if (isOrganizer) {
+          setMenuItems([
+            ...baseMenu,
+            { name: "Create Event", href: "/create-event" },
+          ]);
+        }
+        // if not organizer
+        else {
+          setMenuItems([
+            ...baseMenu,
+            {
+              name: "Become Organizer",
+              href: "https://docs.google.com/forms/d/e/1FAIpQLSfRjkF8eUU7XqYd-B81oxtb3kVXSJhKihdmzGZ1k5at21swDg/viewform?usp=sharing&ouid=116351869150649390284",
+            },
+          ]);
+        }
+      } catch (error) {
+        console.error("Error checking organizer status:", error);
+      }
     })();
   }, [address, isConnected]);
   const [menuState, setMenuState] = React.useState(false);
@@ -445,25 +487,14 @@ export const HeroHeader = () => {
             <div className="absolute inset-0 m-auto hidden size-fit lg:block">
               <ul className="flex gap-8 text-sm">
                 {menuItems.map((item, index) => {
-                  if (item.name === "Create Event" && !isOrganizer) {
-                    return (
-                      <li key={index}>
-                        <Link
-                          href="https://docs.google.com/forms/d/e/1FAIpQLSfRjkF8eUU7XqYd-B81oxtb3kVXSJhKihdmzGZ1k5at21swDg/viewform?usp=sharing&ouid=116351869150649390284"
-                          className="text-muted-foreground hover:text-accent-foreground block duration-150"
-                          target="_blank"
-                        >
-                          <span>Become Organizer</span>
-                        </Link>
-                      </li>
-                    );
-                  }
-
                   return (
                     <li key={index}>
                       <Link
                         href={item.href}
                         className="text-muted-foreground hover:text-accent-foreground block duration-150"
+                        target={`${
+                          item.name === "Become Organizer" ? "_blank" : "_self"
+                        }`}
                       >
                         <span>{item.name}</span>
                       </Link>
@@ -477,25 +508,16 @@ export const HeroHeader = () => {
               <div className="lg:hidden">
                 <ul className="space-y-6 text-base">
                   {menuItems.map((item, index) => {
-                    if (item.name === "Create Event" && !isOrganizer) {
-                      return (
-                        <li key={index}>
-                          <Link
-                            href="https://docs.google.com/forms/d/e/1FAIpQLSfRjkF8eUU7XqYd-B81oxtb3kVXSJhKihdmzGZ1k5at21swDg/viewform?usp=sharing&ouid=116351869150649390284"
-                            className="text-muted-foreground hover:text-accent-foreground block duration-150"
-                            target="_blank"
-                          >
-                            <span>Become Organizer</span>
-                          </Link>
-                        </li>
-                      );
-                    }
-
                     return (
                       <li key={index}>
                         <Link
                           href={item.href}
                           className="text-muted-foreground hover:text-accent-foreground block duration-150"
+                          target={`${
+                            item.name === "Become Organizer"
+                              ? "_blank"
+                              : "_self"
+                          }`}
                         >
                           <span>{item.name}</span>
                         </Link>

@@ -30,7 +30,6 @@ export async function fetchEvents() {
     throw new Error(err.error || err.message || "Failed to fetch events");
   }
 
-  
   return res.json();
 }
 
@@ -43,6 +42,20 @@ export async function fetchEventById(id: string) {
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || err.message || `Failed to fetch event ${id}`);
+  }
+
+  return res.json();
+}
+
+export async function fetchCreatedEventsByAddress() {
+  const res = await fetch(`/api/events`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || err.message);
   }
 
   return res.json();

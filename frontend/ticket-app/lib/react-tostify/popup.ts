@@ -18,6 +18,7 @@ export function toastMessage(
 ): Id | undefined {
   const options = {
     position: "top-center" as const,
+    theme: "dark",
     autoClose: time,
     onClose: () => {
       isToastVisible = false;

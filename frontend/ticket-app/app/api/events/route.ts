@@ -57,12 +57,23 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const organizerAddress = searchParams.get("address");
+
   try {
-    const events = await prisma.event.findMany({
-      include: {
-        ticketTypes: true,
-      },
-    });
+    let events;
+
+    if (organizerAddress) {
+      events = await prisma.event.findMany({
+        where: { organizerAddress },
+        include: { ticketTypes: true },
+      });
+    } else {
+      events = await prisma.event.findMany({
+        include: { ticketTypes: true },
+      });
+    }
+
     if (!events || events.length === 0) {
       return NextResponse.json({ message: "No events found" }, { status: 404 });
     }

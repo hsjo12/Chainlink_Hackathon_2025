@@ -37,3 +37,7 @@ export function formatDateForInput(dateString: string) {
   const minutes = String(date.getMinutes()).padStart(2, "0");
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
+
+export function isoToEpoch(isoString: string): number {
+  return Math.floor(new Date(isoString).getTime() / 1000);
+}

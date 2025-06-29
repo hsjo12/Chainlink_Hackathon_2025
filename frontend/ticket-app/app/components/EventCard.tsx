@@ -1,54 +1,30 @@
 "use client";
 import React, { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  Calendar,
-  MapPin,
-  Clock,
-  Ticket,
-  QrCode,
-  Sparkles,
-  Star,
-  Zap,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { generateQRCodeImage } from "@/lib/qr-utils";
-import QRImage from "./QRImage";
+import { Calendar, MapPin, Info, Tickets } from "lucide-react";
 
-type Attribute = {
-  trait_type: string;
-  value: string | number;
-  display_type?: string;
-};
-
-type TicketCardProps = {
-  name: string;
+type EventCardProps = {
+  title: string;
   description: string;
   image: string;
-  attributes: Attribute[];
+  startDate: number;
+  location: string;
+  eventId: string;
 };
 
-export const TicketCard = ({
-  name,
+export const EventCard = ({
+  title,
   description,
   image,
-  attributes,
-}: TicketCardProps) => {
+  startDate,
+  location,
+  eventId,
+}: EventCardProps) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [qrImage, setQrImage] = useState<string | null>(null);
-  const getAttribute = (type: string) =>
-    attributes.find((attr) => attr.trait_type === type)?.value;
-
-  const startTime = getAttribute("Start Time");
-  const endTime = getAttribute("End Time");
-  const tier = getAttribute("Tier");
-  const section = getAttribute("Section");
-  const seatNumber = getAttribute("Seat Number");
-  const location = getAttribute("Location");
 
   const formatDate = (timestamp: string | number | undefined) => {
     if (!timestamp) return "N/A";
@@ -66,20 +42,7 @@ export const TicketCard = ({
     };
   };
 
-  const startDateTime = formatDate(startTime);
-
-  const getTierIcon = (tier: string | number | undefined) => {
-    switch (tier) {
-      case "VIP":
-        return Star;
-      case "GOLD":
-        return Zap;
-      default:
-        return Ticket;
-    }
-  };
-
-  const TierIcon = getTierIcon(tier);
+  const startDateTime = formatDate(startDate);
 
   // Handle mouse movement for 3D effect
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -104,13 +67,6 @@ export const TicketCard = ({
   const handleMouseLeave = () => {
     setIsHovered(false);
     setRotation({ x: 0, y: 0 });
-  };
-
-  const getQRCode = async () => {
-    const qrImagURL = await generateQRCodeImage("id", "address");
-
-    console.log(qrImagURL);
-    setQrImage(qrImagURL);
   };
 
   return (
@@ -141,7 +97,6 @@ export const TicketCard = ({
       onMouseLeave={handleMouseLeave}
       onMouseMove={handleMouseMove}
     >
-      {qrImage && <QRImage imageURL={qrImage} setQrImage={setQrImage} />}
       {/* Event Image */}
       {image && (
         <motion.div
@@ -161,7 +116,7 @@ export const TicketCard = ({
         >
           <img
             src={image}
-            alt={name}
+            alt={title}
             className="w-full h-full object-cover"
             onLoad={() => setImageLoaded(true)}
             style={{
@@ -420,10 +375,9 @@ export const TicketCard = ({
 
           {/* Tier icon */}
           <div className="flex items-center justify-center w-full h-full relative z-10">
-            <TierIcon className="w-5 h-5 text-white" />
+            <Tickets className="w-5 h-5 text-white" />
           </div>
         </motion.div>
-
         {/* Content positioning to match the image */}
         <motion.div
           className="mb-auto"
@@ -451,7 +405,7 @@ export const TicketCard = ({
               transition: { duration: 1.2, delay: 0.2 },
             }}
           >
-            {name}
+            {title}
           </motion.h3>
 
           <motion.div
@@ -464,6 +418,12 @@ export const TicketCard = ({
               transition: { duration: 1.2, delay: 0.4 },
             }}
           >
+            {/* Description */}
+            <div className="flex items-center gap-2 text-gray-300">
+              <Info className="w-3 h-3" />
+              <span className="text-xs">{description}</span>
+            </div>
+
             {/* Location */}
             <div className="flex items-center gap-2 text-gray-300">
               <MapPin className="w-3 h-3" />
@@ -481,20 +441,10 @@ export const TicketCard = ({
                 <span className="text-xs">{startDateTime}</span>
               )}
             </div>
-
-            {/* Seating */}
-            <div className="flex items-center gap-2 text-gray-300">
-              <Ticket className="w-3 h-3" />
-              <span className="text-xs">
-                {tier} • Section {section}
-                {seatNumber &&
-                  seatNumber !== section &&
-                  ` • Seat ${seatNumber}`}
-              </span>
-            </div>
           </motion.div>
 
           <motion.a
+            href={`/edit-event?eventId=${eventId}`}
             className="inline-flex items-center text-white text-sm font-medium group"
             initial={{ filter: "blur(3px)", opacity: 0.7 }}
             animate={{
@@ -506,10 +456,7 @@ export const TicketCard = ({
               filter: "drop-shadow(0 0 5px rgba(255, 255, 255, 0.5))",
             }}
           >
-            <Button variant={"link"} onClick={getQRCode}>
-              Show QR
-            </Button>
-
+            Edit Event
             <motion.svg
               className="ml-1 w-4 h-4"
               width="8"
