@@ -30,7 +30,7 @@ export async function fetchEvents() {
     throw new Error(err.error || err.message || "Failed to fetch events");
   }
 
-  // 실제 데이터 배열을 반환
+  
   return res.json();
 }
 

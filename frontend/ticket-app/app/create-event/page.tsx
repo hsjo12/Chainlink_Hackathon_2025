@@ -2,7 +2,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { HeaderMenu } from "@/app/components/HeaderMenu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +19,12 @@ import { checkOrganizer } from "@/lib/web3/smartContract/organizerRegistry";
 import ImageUploadButton from "../components/ImageUploadField";
 import { storeNewEvent } from "@/lib/db/utils/events";
 import { ethers } from "ethers";
+import { DotPattern } from "@/components/magicui/dot-pattern";
+import { cn } from "@/lib/utils";
+import { MagicCard } from "@/components/magicui/magic-card";
+import { HeroHeader } from "@/components/blocks/hero-section-1";
+
+
 
 // Define Ticket type
 const ticketOptions = ["VIP", "STANDARD", "STANDING"];
@@ -237,14 +242,23 @@ export default function CreateEventPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-100 p-6">
-      <HeaderMenu />
-
-      <div className="max-w-4xl mx-auto">
+    <main className="min-h-screen bg-black p-6">
+          <HeroHeader />
+      <DotPattern
+        className={cn(
+          "[mask-image:radial-gradient(700px_circle_at_center,white,transparent)] w-full",
+        )}
+      />
+      
+      <div className="max-w-4xl mx-auto mt-30">
         <h1 className="text-3xl font-bold mb-6">Create New Event</h1>
 
         <form onSubmit={handleSubmit}>
-          <Card className="mb-6">
+          <Card className="mb-6 py-0">
+             <MagicCard
+        gradientColor={"#262626"}
+        className="h-full my-0"
+      >
             <CardContent className="p-6">
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold mb-4">Event Details</h2>
@@ -372,10 +386,15 @@ export default function CreateEventPage() {
                   </p>
                 </div>
               </div>
-            </CardContent>
+              </CardContent>
+              </MagicCard>
           </Card>
-
-          <Card className="mb-6">
+          
+          <Card className="mb-6 py-0">
+               <MagicCard
+        gradientColor={"#262626"}
+        className="h-full my-0"
+      >
             <CardContent className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">Ticket Types</h2>
@@ -469,10 +488,15 @@ export default function CreateEventPage() {
                   </div>
                 ))}
               </div>
-            </CardContent>
+              </CardContent>
+              </MagicCard>
           </Card>
-
-          <Card className="mb-6">
+          
+          <Card className="mb-6 py-0">
+               <MagicCard
+        gradientColor={"#262626"}
+        className="h-full my-0"
+      >
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-4">Payment Options</h2>
 
@@ -503,7 +527,8 @@ export default function CreateEventPage() {
                   </div>
                 </div>
               </div>
-            </CardContent>
+              </CardContent>
+              </MagicCard>
           </Card>
 
           <div className="flex justify-end">

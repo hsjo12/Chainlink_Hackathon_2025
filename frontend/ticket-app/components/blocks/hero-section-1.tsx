@@ -44,7 +44,7 @@ const transitionVariants = {
 };
 
 export function HeroSection() {
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState<any[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -62,18 +62,6 @@ export function HeroSection() {
     })();
   }, []);
 
-  // Load events from localStorage on client-side
-  useEffect(() => {
-    const storedEvents = localStorage.getItem("events");
-    if (storedEvents) {
-      try {
-        const parsedEvents = JSON.parse(storedEvents);
-        setEvents([...defaultEvents, ...parsedEvents]);
-      } catch (error) {
-        console.error("Error parsing stored events:", error);
-      }
-    }
-  }, []);
 
   const texts = [
     "Explore Events",
@@ -354,10 +342,10 @@ export function HeroSection() {
         <section className="w-[80%] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
           {events.map((event) => (
             <GridPatternCard key={event.id}>
-              {event?.image && (
+              {event?.imageUrl && (
                 <div className="w-full h-48 overflow-hidden">
                   <img
-                    src={event?.image}
+                    src={event?.imageUrl}
                     alt={event.title}
                     className="w-full h-full object-cover"
                   />
@@ -395,10 +383,13 @@ export function HeroSection() {
 const menuItems = [
   { name: "Home", href: "/" },
   { name: "Marketplace", href: "/marketplace" },
+  { name: "Dashboard", href: "/dashbaord" },
   { name: "Create Event", href: "/create-event" },
 ];
 
-const HeroHeader = () => {
+
+
+export const HeroHeader = () => {
   const { address, isConnected } = useAppKitAccount();
   const [isOrganizer, setIsOrganizer] = useState(false);
   useEffect(() => {
@@ -408,7 +399,6 @@ const HeroHeader = () => {
       setIsOrganizer(result);
     })();
   }, [address, isConnected]);
-
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
 
