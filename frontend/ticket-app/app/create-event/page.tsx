@@ -39,7 +39,7 @@ export default function CreateEventPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [ticketTypes, setTicketTypes] = useState<TicketType[]>([
-    { id: "vip", name: "VIP", price: "", quantity: "" },
+    { id: "vip", name: "VIP", price: "", totalSupply: "" },
   ]);
   const [selectedCryptocurrencies, setSelectedCryptocurrencies] = useState<
     string[]
@@ -116,7 +116,7 @@ export default function CreateEventPage() {
       id: newId,
       name: unusedTypes[0],
       price: "",
-      quantity: "",
+      totalSupply: "",
     };
     setTicketTypes([...ticketTypes, newTicket]);
     ticketIdCounter.current += 1;
@@ -213,7 +213,7 @@ export default function CreateEventPage() {
           name: ticket.name,
           description: ticket.name, // currently no description filed, so just ticket.name
           price: parseFloat(ticket.price),
-          totalSupply: parseInt(ticket.quantity),
+          totalSupply: parseInt(ticket.totalSupply),
           typeValue: buildTierValue(ticket.name),
         })),
         paymentTokens: selectedCryptocurrencies,
@@ -446,18 +446,18 @@ export default function CreateEventPage() {
                       </div>
 
                       <div>
-                        <Label htmlFor={`${ticket.id}-quantity`}>
+                        <Label htmlFor={`${ticket.id}-totalSupply`}>
                           Quantity
                         </Label>
                         <Input
-                          id={`${ticket.id}-quantity`}
+                          id={`${ticket.id}-totalSupply`}
                           type="number"
                           min="1"
-                          value={ticket.quantity}
+                          value={ticket.totalSupply}
                           onChange={(e) =>
                             updateTicketType(
                               ticket.id,
-                              "quantity",
+                              "totalSupply",
                               e.target.value
                             )
                           }
