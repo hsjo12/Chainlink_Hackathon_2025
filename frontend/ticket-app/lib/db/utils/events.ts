@@ -1,4 +1,5 @@
 import { dbCreateEventParams } from "@/types/params";
+import { ethers } from "ethers";
 
 export async function storeNewEvent(eventData: dbCreateEventParams) {
   const res = await fetch("/api/events", {
@@ -8,7 +9,7 @@ export async function storeNewEvent(eventData: dbCreateEventParams) {
     },
     body: JSON.stringify(eventData),
   });
-  console.log(res);
+
   if (!res.ok) {
     const error = await res.json();
     throw new Error(error || "Failed to create event");
@@ -47,8 +48,12 @@ export async function fetchEventById(id: string) {
   return res.json();
 }
 
-export async function fetchCreatedEventsByAddress() {
-  const res = await fetch(`/api/events`, {
+export async function fetchCreatedEventsByAddressAndTickets(address?: string) {
+  const url = `/api/events?address=${encodeURIComponent(
+    address || ethers.ZeroAddress
+  )}`;
+
+  const res = await fetch(url, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });

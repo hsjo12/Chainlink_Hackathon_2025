@@ -23,7 +23,7 @@ import { getReadOnlyContract } from "@/lib/web3/provider";
 import { toastMessage } from "@/lib/react-tostify/popup";
 import { fetchEventById, updateEvents } from "@/lib/db/utils/events";
 import { dbCreateEventParams } from "@/types/params";
-import { formatDateForInput } from "@/lib/utils";
+import { escapeStringForSolidity, formatDateForInput } from "@/lib/utils";
 import ImageUploadButton from "../components/ImageUploadField";
 
 // Define ticket type interface
@@ -336,7 +336,9 @@ export default function EditEventPage() {
                   <Textarea
                     id="description"
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={(e) =>
+                      setDescription(escapeStringForSolidity(e.target.value))
+                    }
                     placeholder="Describe your event"
                     rows={4}
                     required

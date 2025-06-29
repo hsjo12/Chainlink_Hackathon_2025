@@ -109,7 +109,6 @@ export const TicketCard = ({
   const getQRCode = async () => {
     const qrImagURL = await generateQRCodeImage("id", "address");
 
-    console.log(qrImagURL);
     setQrImage(qrImagURL);
   };
 
@@ -509,30 +508,6 @@ export const TicketCard = ({
             <Button variant={"link"} onClick={getQRCode}>
               Show QR
             </Button>
-
-            <motion.svg
-              className="ml-1 w-4 h-4"
-              width="8"
-              height="8"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              animate={{
-                x: isHovered ? 4 : 0,
-              }}
-              transition={{
-                duration: 0.6,
-                ease: "easeOut",
-              }}
-            >
-              <path
-                d="M1 8H15M15 8L8 1M15 8L8 15"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </motion.svg>
           </motion.a>
         </motion.div>
       </motion.div>

@@ -61,24 +61,30 @@ export async function GET(request: NextRequest) {
   const organizerAddress = searchParams.get("address");
 
   try {
-    let events;
-
     if (organizerAddress) {
-      events = await prisma.event.findMany({
+      const events = await prisma.event.findMany({
         where: { organizerAddress },
         include: { ticketTypes: true },
       });
+
+      const addressesResult = await prisma.event.findMany({
+        where: { organizerAddress },
+        select: { ticketAddress: true },
+      });
+
+      const ticketAddresses = addressesResult.map((item) => item.ticketAddress);
+
+      return NextResponse.json({
+        events,
+        ticketAddresses,
+      });
     } else {
-      events = await prisma.event.findMany({
+      const events = await prisma.event.findMany({
         include: { ticketTypes: true },
       });
-    }
 
-    if (!events || events.length === 0) {
-      return NextResponse.json({ message: "No events found" }, { status: 404 });
+      return NextResponse.json(events);
     }
-
-    return NextResponse.json(events);
   } catch (error) {
     console.error("Error fetching events:", error);
     return NextResponse.json(

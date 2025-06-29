@@ -32,7 +32,7 @@ export default function ImageUploadButton({
 
   const { startUpload } = useUploadThing("imageUploader", {
     onClientUploadComplete: (res) => {
-      console.log(res);
+      // console.log(res);
     },
     onUploadError: () => {
       console.log("error occurred while uploading");
@@ -50,7 +50,7 @@ export default function ImageUploadButton({
         setImagePreview(res[0]?.ufsUrl);
       }
     } catch (error) {
-      console.error("업로드 실패", error);
+      console.error("error occurred while uploading", error);
     }
   };
 

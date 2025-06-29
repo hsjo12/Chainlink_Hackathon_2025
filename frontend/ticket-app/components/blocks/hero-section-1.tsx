@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnimatedGroup } from "@/components/ui/animated-group";
-import { cn, formatLocalDate } from "@/lib/utils";
+import { cn, formatLocalDate, truncateText } from "@/lib/utils";
 import {
   GridPatternCard,
   GridPatternCardBody,
@@ -21,6 +21,7 @@ import ConnectWallet from "@/app/components/ConnectWallet";
 import { checkOrganizer } from "@/lib/web3/smartContract/organizerRegistry";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { fetchEvents } from "@/lib/db/utils/events";
+import Image from "next/image";
 
 const transitionVariants = {
   item: {
@@ -47,7 +48,7 @@ type MenuItem = {
 };
 export function HeroSection() {
   const [events, setEvents] = useState<any[]>([]);
-
+  const { address } = useAppKitAccount();
   useEffect(() => {
     (async () => {
       const events = await fetchEvents();
@@ -58,6 +59,8 @@ export function HeroSection() {
         date: formatLocalDate(v.startDate),
         location: v.location,
         description: v.description,
+        imageURL: v.imageUrl,
+        organizerAddress: v.organizerAddress,
       }));
 
       setEvents(formattedEvent);
@@ -352,25 +355,42 @@ export function HeroSection() {
                   />
                 </div>
               )}
-              <GridPatternCardBody className="p-6">
-                <h2 className="text-2xl font-semibold mb-2">{event.title}</h2>
-                <div className="flex items-center text-sm text-gray-500 mb-1">
-                  <CalendarIcon className="w-4 h-4 mr-1" />
-                  {event.date}
+              <GridPatternCardBody className="p-6 grid grid-cols-1 xl:grid-cols-2 gap-4 justify-center ">
+                <div className="relative w-full h-64">
+                  <Image
+                    src={event.imageURL}
+                    alt="Event image"
+                    fill
+                    className="object-cover rounded-3xl"
+                  />
                 </div>
-                <div className="flex items-center text-sm text-gray-500 mb-4">
-                  <MapPinIcon className="w-4 h-4 mr-1" />
-                  {event.location}
-                </div>
-                <p className="text-gray-700 mb-4">{event.description}</p>
-                <div className="flex gap-2">
-                  <Link href={`/tickets?eventId=${event.id}`}>
-                    <Button>View Tickets</Button>
-                  </Link>
-                  {/*<Link href="/marketplace"><Button variant="outline">Marketplace</Button></Link>*/}
-                  <Link href={`/edit-event?eventId=${event.id}`}>
-                    <Button variant="outline">Edit Event</Button>
-                  </Link>
+                <div className="flex flex-col gap-3 justify-between">
+                  <h2 className="text-2xl font-semibold mb-2">{event.title}</h2>
+                  <div className="flex items-center text-sm text-gray-500 mb-1">
+                    <CalendarIcon className="w-4 h-4 mr-1" />
+                    {event.date}
+                  </div>
+                  <div className="flex items-center text-sm text-gray-500 mb-4">
+                    <MapPinIcon className="w-4 h-4 mr-1" />
+                    {event.location}
+                  </div>
+                  <p className="text-gray-700 mb-4">
+                    {truncateText(event.description)}
+                  </p>
+                  <div className="flex gap-2">
+                    <Link href={`/tickets?eventId=${event.id}`}>
+                      <Button>View Tickets</Button>
+                    </Link>
+                    {/*<Link href="/marketplace"><Button variant="outline">Marketplace</Button></Link>*/}
+
+                    {event.organizerAddress !== address ? (
+                      <></>
+                    ) : (
+                      <Link href={`/edit-event?eventId=${event.id}`}>
+                        <Button variant="outline">Edit Event</Button>
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </GridPatternCardBody>
             </GridPatternCard>

@@ -42,8 +42,8 @@ const metadata = {
 createAppKit({
   adapters: [new EthersAdapter()],
   metadata,
-  networks: [localNode],
-  defaultNetwork: localNode,
+  networks: [sepolia],
+  defaultNetwork: sepolia,
   projectId,
   allowUnsupportedChain: false,
   enableWalletConnect: true,
