@@ -72,7 +72,9 @@ export async function GET(request: NextRequest) {
         select: { ticketAddress: true },
       });
 
-      const ticketAddresses = addressesResult.map((item) => item.ticketAddress);
+      const ticketAddresses = addressesResult.map(
+        (item: any) => item.ticketAddress
+      );
 
       return NextResponse.json({
         events,

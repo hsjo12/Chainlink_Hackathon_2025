@@ -19,12 +19,13 @@ import {
   setPaymentTokens,
   totalSoldTicket,
 } from "@/lib/web3/smartContract/ticketLaunchpad";
-import { getReadOnlyContract } from "@/lib/web3/provider";
+
 import { toastMessage } from "@/lib/react-tostify/popup";
 import { fetchEventById, updateEvents } from "@/lib/db/utils/events";
 import { dbCreateEventParams } from "@/types/params";
 import { escapeStringForSolidity, formatDateForInput } from "@/lib/utils";
 import ImageUploadButton from "../components/ImageUploadField";
+import { LoadingSpinner } from "@/components/ui/loadingSpinner";
 
 // Define ticket type interface
 interface TicketType {
@@ -35,7 +36,6 @@ interface TicketType {
 }
 
 export default function EditEventPage() {
-  const { address, isConnected } = useAppKitAccount();
   const { walletProvider } = useAppKitProvider("eip155");
 
   const router = useRouter();
@@ -276,17 +276,18 @@ export default function EditEventPage() {
 
   if (!eventFound) {
     return (
-      <main className="min-h-screen bg-gray-100 p-6">
+      <main className="min-h-screen bg-[#141414] p-6">
         <HeaderMenu />
-        <div className="max-w-4xl mx-auto text-center py-12">
-          <p>Loading event data...</p>
+        <div className="flex flex-col gap-10 justify-center items-center h-[50vh]">
+          <LoadingSpinner size={"xxl"} />
+          <p className="text-4xl">Loading data...</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gray-100 p-6">
+    <main className="min-h-screen bg-[#141414] p-6">
       <HeaderMenu />
 
       <div className="max-w-4xl mx-auto">
@@ -298,7 +299,7 @@ export default function EditEventPage() {
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Events
           </Link>
-          <h1 className="text-3xl font-bold">Edit Event</h1>
+          <h1 className="text-2xl font-bold">Edit Event</h1>
         </div>
 
         <form onSubmit={handleEventDetailSubmit}>

@@ -8,21 +8,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { z } from "zod";
 
-export async function PUT(
-  request: NextRequest,
-  context: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, context: any) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const mode = searchParams.get("mode");
-    const params = await context.params;
+    const { id } = context.params;
     const body = await request.json();
     let res;
 
     if (mode === "eventDetails") {
       const parsedData = updateEventDetails.parse(body);
       res = await prisma.event.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           title: parsedData.title,
           symbol: parsedData.symbol,
@@ -53,7 +50,7 @@ export async function PUT(
     } else if (mode === "paymentOptions") {
       const parsedData = updatePaymentTokens.parse(body);
       res = await prisma.event.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           paymentTokens: parsedData.paymentTokens,
         },
@@ -72,15 +69,13 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, context: any) {
   try {
+    const { id } = context.params;
     // Delete the event and associated ticket types
-    await prisma.ticketType.deleteMany({ where: { eventId: params.id } });
+    await prisma.ticketType.deleteMany({ where: { eventId: id } });
     const event = await prisma.event.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ message: "Event deleted successfully", event });
@@ -93,22 +88,18 @@ export async function DELETE(
   }
 }
 
-export async function GET(
-  request: NextRequest,
-  context: { params: { id: string } }
-) {
-  const params = await context.params;
-
+export async function GET(request: NextRequest, context: any) {
   try {
+    const { id } = context.params;
     const event = await prisma.event.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         ticketTypes: true,
       },
     });
 
     if (!event) {
-      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+      return NextResponse.json({});
     }
 
     return NextResponse.json(event);

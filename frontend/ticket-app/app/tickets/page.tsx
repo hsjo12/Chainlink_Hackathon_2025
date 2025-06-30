@@ -10,7 +10,7 @@ import ConnectWallet from "../components/ConnectWallet";
 import { buildTierValue } from "@/lib/web3/utils";
 import { availableTicket } from "@/lib/web3/smartContract/ticketLaunchpad";
 import { toastMessage } from "@/lib/react-tostify/popup";
-import { dbCreateEventParams } from "@/types/params";
+
 import { fetchEventById } from "@/lib/db/utils/events";
 import { ethers } from "ethers";
 

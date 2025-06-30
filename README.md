@@ -14,8 +14,10 @@ Ticketchain is a decentralized ticketing platform that transforms how tickets ar
 - [Alchemy](https://www.alchemy.com/)
 - [Openzeppelin defender](https://www.openzeppelin.com/defender)
 - [Uploadthing](https://uploadthing.com/)
+- [Prisma](https://www.prisma.io/docs/orm/prisma-schema/data-model/models)
+- [Neon](https://neon.com/)
 
-In order to deploy contract you will need:
+  In order to deploy contract you will need:
 
 1. **Ensure you have the following prerequisites:**
 
@@ -55,7 +57,13 @@ In order to deploy contract you will need:
    frontend/ticket-app/smartContracts/abis
    ```
 
-3. **Run the website**
+3. **Generate Prisma Client**
+
+   ```bash
+   npx prisma generate
+   ```
+
+4. **Run the website**
    From the frontend directory, start the Next.js app:
    ```bash
    npm run dev

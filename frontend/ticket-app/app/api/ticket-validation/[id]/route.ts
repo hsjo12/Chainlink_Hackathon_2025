@@ -3,17 +3,14 @@ import { prisma } from "@/lib/db/prisma";
 import { z } from "zod";
 import { UpdateTicketValidationSchema } from "@/lib/db/types";
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, context: any) {
   try {
     const body = await request.json();
     const parsedData = UpdateTicketValidationSchema.parse(body);
-
+    const { id } = context.params;
     // Update the ticket validation
     const ticketValidation = await prisma.ticketValidation.update({
-      where: { id: params?.id },
+      where: { id },
       data: {
         ...parsedData,
         usedAt: parsedData.usedAt ? new Date(parsedData.usedAt) : undefined,

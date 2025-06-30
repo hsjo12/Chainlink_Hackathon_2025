@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AppKit from "@/lib/reown/appKit";
 import { ToastContainer } from "react-toastify";
+import { Suspense } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -52,9 +53,9 @@ function ScreenSizeWarning() {
 }
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en" className="dark">
       <body
@@ -62,7 +63,11 @@ export default function RootLayout({
       >
         <ToastContainer />
         <ScreenSizeWarning />
-        <AppKit>{children}</AppKit>
+
+        {/* Suspense boundary for client components */}
+        <Suspense fallback={<div className="p-6 text-center">Loading…</div>}>
+          <AppKit>{children}</AppKit>
+        </Suspense>
       </body>
     </html>
   );

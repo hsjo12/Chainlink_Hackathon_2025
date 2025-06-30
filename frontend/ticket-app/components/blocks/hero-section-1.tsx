@@ -22,7 +22,7 @@ import { checkOrganizer } from "@/lib/web3/smartContract/organizerRegistry";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { fetchEvents } from "@/lib/db/utils/events";
 import Image from "next/image";
-
+import type { Variants } from "framer-motion";
 const transitionVariants = {
   item: {
     hidden: {
@@ -41,7 +41,7 @@ const transitionVariants = {
       },
     },
   },
-};
+} as Variants;
 type MenuItem = {
   name: string;
   href: string;
