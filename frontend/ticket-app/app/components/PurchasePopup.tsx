@@ -233,7 +233,7 @@ export function PurchasePopup({
 
   return (
     <div className="fixed inset-0 flex items-end justify-center z-50 p-4">
-      <div className="bg-white rounded-t-xl w-full max-w-md p-6 animate-slide-up shadow-lg">
+      <div className="bg-[#000000] rounded-t-xl w-full max-w-md p-6 animate-slide-up shadow-lg">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Purchase Ticket</h3>
           <button
@@ -245,7 +245,7 @@ export function PurchasePopup({
         </div>
 
         <div className="mb-6">
-          <div className="bg-gray-50 p-4 rounded-lg mb-4">
+          <div className="bg-[#0e0e0e] p-4 rounded-lg mb-4">
             <p className="text-sm text-gray-500">Ticket Type</p>
             <p className="font-medium">{ticketInfo.name}</p>
 

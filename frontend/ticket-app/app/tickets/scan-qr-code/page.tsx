@@ -99,11 +99,9 @@ export default function ScanQrCode() {
         eventDetails = await eventResponse.json();
         console.log("Fetched Event Details:", eventDetails);
       } else {
-        const eventErrorData = await eventResponse
-          .json()
-          .catch(() => ({
-            message: "Unknown error (Event response not JSON)",
-          }));
+        const eventErrorData = await eventResponse.json().catch(() => ({
+          message: "Unknown error (Event response not JSON)",
+        }));
         console.error(
           "GET /api/events Error:",
           eventResponse.status,

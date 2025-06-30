@@ -417,7 +417,7 @@ export const HeroHeader = () => {
     if (!address || !isConnected) {
       setMenuItems([
         { name: "Home", href: "/" },
-        { name: "Marketplace", href: "/marketplace" },
+        // { name: "Marketplace", href: "/marketplace" },
         {
           name: "Become Organizer",
           href: "https://docs.google.com/forms/d/e/1FAIpQLSfRjkF8eUU7XqYd-B81oxtb3kVXSJhKihdmzGZ1k5at21swDg/viewform?usp=sharing&ouid=116351869150649390284",
@@ -432,7 +432,7 @@ export const HeroHeader = () => {
 
         const baseMenu: MenuItem[] = [
           { name: "Home", href: "/" },
-          { name: "Marketplace", href: "/marketplace" },
+          // { name: "Marketplace", href: "/marketplace" },
           {
             name: "Dashboard",
             href: `/dashboard?address=${encodeURIComponent(address)}`,
@@ -485,13 +485,13 @@ export const HeroHeader = () => {
           )}
         >
           <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-4">
-            <div className="flex w-full justify-between lg:w-auto">
+            <div className="flex w-full justify-between lg:w-auto  text-3xl tracking-wider">
               <Link
                 href="/"
                 aria-label="home"
                 className="flex items-center space-x-2"
               >
-                LOGO
+                TicketChain
               </Link>
 
               <button

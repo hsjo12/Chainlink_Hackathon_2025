@@ -121,7 +121,7 @@ export default function Page() {
   };
 
   return (
-    <main className="min-h-screen bg-white p-6">
+    <main className="min-h-screen bg-[#141414] p-6">
       {/* Success message */}
       {purchaseSuccess && (
         <div className="fixed bottom-0 left-0 right-0 bg-green-500 text-white p-4 text-center animate-slide-up z-40">
@@ -141,55 +141,58 @@ export default function Page() {
         <ConnectWallet />
       </div>
 
-      <section className="text-center mb-12">
-        <h1 className="text-4xl font-bold mb-2">Get Your Tickets</h1>
-        {event && (
-          <p className="text-gray-600 text-lg">
-            Choose a ticket type for {event.title}
-          </p>
-        )}
-      </section>
-
-      {tickets.length > 0 ? (
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {tickets.map((ticket) => (
-            <Card
-              key={ticket.id}
-              className={`rounded-2xl shadow-md border ${
-                selected?.id === ticket.id
-                  ? "border-blue-500"
-                  : "border-gray-200"
-              }`}
-            >
-              <CardContent className="p-6 flex flex-col items-center text-center">
-                <h2 className="text-xl font-semibold mb-2">{ticket.name}</h2>
-                <p className="text-2xl font-bold text-blue-600 mb-2">
-                  {formatPrice(ticket.price)}
-                </p>
-                <p className="text-gray-600 mb-2">{ticket.benefits}</p>
-                {ticket.totalSupply && (
-                  <p className="text-sm text-gray-500 mb-4">
-                    {ticket.totalSupply} tickets available
-                  </p>
-                )}
-                <Button
-                  onClick={() => {
-                    setSelected(ticket);
-                    handlePurchase(ticket);
-                  }}
-                >
-                  {selected?.id === ticket.id ? "Selected" : "Select Ticket"}
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+      <div className="flex flex-col justify-center items-center h-[80vh] ">
+        {" "}
+        <section className="text-center mb-12">
+          <h1 className="text-4xl font-bold mb-2">Get Your Tickets</h1>
+          {event && (
+            <p className="text-gray-600 text-lg">
+              Choose a ticket type for {event.title}
+            </p>
+          )}
         </section>
-      ) : (
-        <div className="text-center py-12">
-          <p className="text-gray-500">No tickets available for this event.</p>
-        </div>
-      )}
-
+        {tickets.length > 0 ? (
+          <section className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {tickets.map((ticket) => (
+              <Card
+                key={ticket.id}
+                className={`rounded-2xl shadow-md border ${
+                  selected?.id === ticket.id
+                    ? "border-blue-500"
+                    : "border-gray-200"
+                }`}
+              >
+                <CardContent className="p-6 flex flex-col items-center text-center">
+                  <h2 className="text-xl font-semibold mb-2">{ticket.name}</h2>
+                  <p className="text-2xl font-bold text-blue-600 mb-2">
+                    {formatPrice(ticket.price)}
+                  </p>
+                  <p className="text-gray-600 mb-2">{ticket.benefits}</p>
+                  {ticket.totalSupply && (
+                    <p className="text-sm text-gray-500 mb-4">
+                      {ticket.totalSupply} tickets available
+                    </p>
+                  )}
+                  <Button
+                    onClick={() => {
+                      setSelected(ticket);
+                      handlePurchase(ticket);
+                    }}
+                  >
+                    {selected?.id === ticket.id ? "Selected" : "Select Ticket"}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </section>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-gray-500">
+              No tickets available for this event.
+            </p>
+          </div>
+        )}
+      </div>
       {/* Purchase Popup */}
       {selected && (
         <PurchasePopup
