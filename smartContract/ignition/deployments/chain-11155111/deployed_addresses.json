@@ -1,0 +1,19 @@
+{
+  "ConfigModule#Config_Impl": "0xC0ce5CeA57870aEF5Ec0c6aFddA9DBa3DCf24470",
+  "ConfigModule#Config_Proxy": "0x01AbD13ff659d75233F25016230B40AF842cf25B",
+  "ConfigModule#Config": "0x01AbD13ff659d75233F25016230B40AF842cf25B",
+  "FeeManagerModule#FeeManager_Impl": "0xc40A2Cc1c73EC17AB6Ee5609470e6fC18867A9Ac",
+  "FeeManagerModule#FeeManager_Proxy": "0xDEAe5Fe045Ca7FA0a6206A1434c2C23033da6BAb",
+  "FeeManagerModule#FeeManager": "0xDEAe5Fe045Ca7FA0a6206A1434c2C23033da6BAb",
+  "TreasuryModule#Treasury_Impl": "0x38F3C01acF54A7C86cF4b5cD792B9C86Fb3Ec5f4",
+  "TreasuryModule#Treasury_Proxy": "0x1DD1a23b068dB802582F8D733C4cb289c85644f1",
+  "TreasuryModule#Treasury": "0x1DD1a23b068dB802582F8D733C4cb289c85644f1",
+  "OrganizerRegistryModule#OrganizerRegistry_Impl": "0x68FFB52565c12999c423c8EC6B26C876C52a11e4",
+  "OrganizerRegistryModule#OrganizerRegistry_Proxy": "0x519990bAfb605d97a51D801E56C73348CA5b54bE",
+  "OrganizerRegistryModule#OrganizerRegistry": "0x519990bAfb605d97a51D801E56C73348CA5b54bE",
+  "TicketFactoryModule#TicketFactory_Impl": "0x488a9F38e6BD6485F39B820c0e954Ee402c41e6D",
+  "TicketFactoryModule#TicketFactory_Proxy": "0x3A3f2644B85a5c9B2C5624dA3d7b931Bf1532620",
+  "TicketFactoryModule#TicketFactory": "0x3A3f2644B85a5c9B2C5624dA3d7b931Bf1532620",
+  "TicketModule#Ticket": "0x309F762bd7d2F448821988194f0DF5f3baae560b",
+  "TicketLaunchpadModule#TicketLaunchpad": "0xF4Fce99C0dF86C5E09B6450e7D0dEfF114089fB7"
+}
